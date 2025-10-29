@@ -30,10 +30,10 @@ jobs:
         include:
           # master with max supported version
           - php: '8.3'
-            moodle-branch: 'master'
+            moodle-branch: 'main'
             database: pgsql
           - php: '8.3'
-            moodle-branch: 'master'
+            moodle-branch: 'main'
             database: mariadb
           # Max supported versions
           - php: '8.2'
