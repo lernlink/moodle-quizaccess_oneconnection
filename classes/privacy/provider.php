@@ -89,8 +89,7 @@ class provider implements privacy_provider
         // The result is now an array of integer IDs, as required by the constructor.
         $contextids = array_values($DB->get_fieldset_sql($sql, $params));
 
-        // CORRECTED: The constructor requires 3 arguments: user object, component name, and an array of context IDs.
-        return new approved_contextlist($user, 'mod_quiz', $contextids);
+        return new approved_contextlist($user, 'quizaccess_onesession', $contextids);
     }
 
     /**
@@ -100,7 +99,7 @@ class provider implements privacy_provider
      */
     public static function export_user_data(approved_contextlist $contextlist)
     {
-        // Not implemented, as this data is not considered exportable user content.
+        // Nothing to export – this is audit data.
     }
 
     /**

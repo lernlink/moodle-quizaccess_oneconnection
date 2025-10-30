@@ -34,7 +34,7 @@ $capabilities = [
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
         ],
-        'clonepermissionsfrom' => 'moodle/quiz:viewreports',
+        'clonepermissionsfrom' => 'mod/quiz:viewreports',
     ],
     'quizaccess/onesession:editenabled' => [
         'riskbitmask' => RISK_CONFIG,

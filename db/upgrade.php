@@ -84,6 +84,61 @@ function xmldb_quizaccess_onesession_upgrade($oldversion)
         upgrade_plugin_savepoint(true, 2025092600, 'quizaccess', 'onesession');
     }
 
+    if ($oldversion < 2025092608) {
+        // -------------------------------------------------------------------------
+        // SAFETY NET: make sure all 3 tables exist, even on weird installs
+        // (e.g. plugin added at a later version without install.xml being run).
+        // -------------------------------------------------------------------------
+
+        // 1) quizaccess_onesession
+        $table = new xmldb_table('quizaccess_onesession');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('enabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('quizid', XMLDB_KEY_FOREIGN_UNIQUE, ['quizid'], 'quiz', ['id']);
+
+            $dbman->create_table($table);
+        }
+
+        // 2) quizaccess_onesession_sess
+        $table = new xmldb_table('quizaccess_onesession_sess');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('sessionhash', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('quizid', XMLDB_KEY_FOREIGN, ['quizid'], 'quiz', ['id']);
+            $table->add_key('attemptid', XMLDB_KEY_FOREIGN_UNIQUE, ['attemptid'], 'quiz_attempts', ['id']);
+
+            $dbman->create_table($table);
+        }
+
+        // 3) quizaccess_onesession_log
+        $table = new xmldb_table('quizaccess_onesession_log');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('unlockedby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('timeunlocked', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('quizid', XMLDB_KEY_FOREIGN, ['quizid'], 'quiz', ['id']);
+            $table->add_key('attemptid', XMLDB_KEY_FOREIGN, ['attemptid'], 'quiz_attempts', ['id']);
+            $table->add_key('unlockedby', XMLDB_KEY_FOREIGN, ['unlockedby'], 'user', ['id']);
+
+            $dbman->create_table($table);
+        }
+
+        // Onesession savepoint reached.
+        upgrade_plugin_savepoint(true, 2025092608, 'quizaccess', 'onesession');
+    }
+
     return true;
 }
 

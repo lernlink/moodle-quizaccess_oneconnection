@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'quizaccess_onesession';
-$plugin->version = 2025092602; // New version for upgrade.
+$plugin->version = 2025092608; // New version for upgrade.
 $plugin->release = '4.0.0';
 $plugin->maturity = MATURITY_STABLE;
 $plugin->requires = 2025041400; // Moodle 5.0

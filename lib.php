@@ -27,27 +27,28 @@ defined('MOODLE_INTERNAL') || die();
 use core\output\pix_icon;
 
 /**
- * Extends the quiz results navigation with a link to the "Allow connections" page.
+ * Extends the quiz "More" menu with the 'Allow connection changes' link.
  *
- * This function is a hook that is called by the quiz module. The function name must
- * follow the pattern {plugintype}_{pluginname}_extend_navigation_{navgroup}.
+ * This is the correct and only navigation hook for quiz sub-plugins. The quiz module
+ * specifically looks for a function named {component_name}_extend_navigation.
  *
- * @param navigation_node $resultsnode The navigation node for quiz results.
+ * @param navigation_node $morenode The navigation node for the "More" menu.
  * @param stdClass $quiz The quiz object.
  * @param stdClass $cm The course module object.
+ * @param stdClass $course The course object.
  * @return void
  */
-function quizaccess_onesession_extend_navigation_quiz_results(navigation_node $resultsnode, stdClass $quiz, stdClass $cm): void
+function quizaccess_onesession_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void
 {
     $context = context_module::instance($cm->id);
     if (has_capability('quizaccess/onesession:allowchange', $context)) {
         $url = new moodle_url('/mod/quiz/accessrule/onesession/allowconnections.php', ['id' => $cm->id]);
-        $resultsnode->add(
+        $morenode->add(
             get_string('allowconnections', 'quizaccess_onesession'),
             $url,
-            navigation_node::TYPE_SETTING,
+            navigation_node::TYPE_ACTION,
             null,
-            'allowconnections',
+            null,
             new pix_icon('i/unlock', '')
         );
     }

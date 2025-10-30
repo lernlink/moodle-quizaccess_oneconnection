@@ -1,27 +1,4 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * Page for managing and allowing connection changes for quiz attempts.
- *
- * @package    quizaccess_onesession
- * @copyright  2024 onwards, Adrian
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 use core\notification;
 use mod_quiz\quiz_attempt;
 
@@ -47,27 +24,23 @@ $PAGE->set_pagelayout('incourse');
 /**
  * Get the human-readable name for a quiz attempt state.
  *
- * This function correctly maps the state constants to their language strings.
- *
- * @param string $state The state constant from the quiz_attempt object (e.g., 'inprogress').
- * @return string The localized state name.
+ * @param string $state
+ * @return string
  */
 function quizaccess_onesession_get_attempt_state_string(string $state): string
 {
     $stringkey = 'state' . $state;
-    // Check if a specific string like 'stateinprogress' exists.
     if (get_string_manager()->string_exists($stringkey, 'quiz')) {
         return get_string($stringkey, 'quiz');
     }
-    // Fallback for any other or future states.
     return $state;
 }
 
 /**
  * Unlocks a specific attempt and logs the action.
  *
- * @param int $attemptid The attempt ID to unlock.
- * @param int $quizid The quiz ID for logging purposes.
+ * @param int $attemptid
+ * @param int $quizid
  * @return void
  */
 function quizaccess_onesession_unlock_and_log(int $attemptid, int $quizid): void
@@ -115,33 +88,45 @@ $table->head = [
     get_string('changeallowed', 'quizaccess_onesession'),
 ];
 
-$sql = "SELECT qa.id, qa.userid, qa.attempt, qa.state, qa.quiz,
-               u.firstname, u.lastname, u.email, u.picture, u.imagealt,
+$sql = "SELECT qa.id,
+               qa.userid,
+               qa.attempt,
+               qa.state,
+               qa.quiz,
+               u.firstname,
+               u.lastname,
+               u.email,
+               u.picture,
+               u.imagealt,
                qoss.id AS locked,
-               qol.timeunlocked, ul.firstname AS teacher_firstname, ul.lastname AS teacher_lastname
+               l.timeunlocked,
+               ul.firstname AS teacher_firstname,
+               ul.lastname AS teacher_lastname
           FROM {quiz_attempts} qa
           JOIN {user} u ON u.id = qa.userid
      LEFT JOIN {quizaccess_onesession_sess} qoss ON qoss.attemptid = qa.id
-     LEFT JOIN {quizaccess_onesession_log} qol ON qol.attemptid = qa.id
+     /* Get only the latest unlock per attempt */
+     LEFT JOIN (
+               SELECT attemptid, MAX(timeunlocked) AS timeunlocked
+                 FROM {quizaccess_onesession_log}
+             GROUP BY attemptid
+               ) l ON l.attemptid = qa.id
+     LEFT JOIN {quizaccess_onesession_log} qol
+               ON qol.attemptid = qa.id AND qol.timeunlocked = l.timeunlocked
      LEFT JOIN {user} ul ON ul.id = qol.unlockedby
          WHERE qa.quiz = :quizid
       ORDER BY u.lastname, u.firstname, qa.attempt";
 
 $params = ['quizid' => $quiz->id];
+
 $attempts = $DB->get_records_sql($sql, $params);
 
 $unlockurl = new moodle_url($PAGE->url);
 
+echo html_writer::start_tag('form', ['action' => $PAGE->url, 'method' => 'post']);
+
 foreach ($attempts as $attempt) {
     $row = new html_table_row();
-    $user = (object) [
-        'id' => $attempt->userid,
-        'firstname' => $attempt->firstname,
-        'lastname' => $attempt->lastname,
-        'email' => $attempt->email,
-        'picture' => $attempt->picture,
-        'imagealt' => $attempt->imagealt,
-    ];
 
     $checkbox = '';
     if ($attempt->state == quiz_attempt::IN_PROGRESS) {
@@ -149,10 +134,11 @@ foreach ($attempts as $attempt) {
     }
     $row->cells[] = $checkbox;
 
-    $row->cells[] = $OUTPUT->user_picture($user, ['size' => 24, 'courseid' => $course->id]) . ' ' . fullname($user);
+    // Student name – build manually to avoid fullname() debug warning.
+    $row->cells[] = trim($attempt->firstname . ' ' . $attempt->lastname);
+
     $row->cells[] = $attempt->email;
 
-    // CORRECTED: Use the new, correct helper function here.
     $row->cells[] = quizaccess_onesession_get_attempt_state_string($attempt->state);
 
     if ($attempt->state == quiz_attempt::IN_PROGRESS) {
@@ -165,8 +151,9 @@ foreach ($attempts as $attempt) {
 
     $logtext = '';
     if (!empty($attempt->timeunlocked)) {
-        $teacher = (object) ['firstname' => $attempt->teacher_firstname, 'lastname' => $attempt->teacher_lastname];
-        $logdata = ['teacher' => fullname($teacher), 'time' => userdate($attempt->timeunlocked)];
+        // Teacher name – also build manually.
+        $teachername = trim(($attempt->teacher_firstname ?? '') . ' ' . ($attempt->teacher_lastname ?? ''));
+        $logdata = ['teacher' => $teachername, 'time' => userdate($attempt->timeunlocked)];
         $logtext = get_string('unlockedbyon', 'quizaccess_onesession', $logdata);
     }
     $row->cells[] = $logtext;
@@ -174,10 +161,15 @@ foreach ($attempts as $attempt) {
     $table->data[] = $row;
 }
 
-echo html_writer::start_tag('form', ['action' => $PAGE->url, 'method' => 'post']);
 echo html_writer::table($table);
+
 echo html_writer::start_tag('div', ['class' => 'buttons']);
-echo html_writer::tag('button', get_string('allowchangeinconnection', 'quizaccess_onesession'), ['type' => 'submit', 'name' => 'unlockselected', 'value' => '1', 'class' => 'btn btn-primary']);
+echo html_writer::tag('button', get_string('allowchangeinconnection', 'quizaccess_onesession'), [
+    'type' => 'submit',
+    'name' => 'unlockselected',
+    'value' => '1',
+    'class' => 'btn btn-primary mt-2'
+]);
 echo html_writer::end_tag('div');
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 echo html_writer::end_tag('form');
