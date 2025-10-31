@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - http://moodle.org/.
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,32 +18,30 @@
  * Privacy provider for the onesession quiz access rule.
  *
  * @package    quizaccess_onesession
- * @copyright  2021 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace quizaccess_onesession\privacy;
 
 use core_privacy\local\metadata\collection;
-use core_privacy\local\metadata\provider as privacy_provider;
-use core_privacy\local\request\context;
+use core_privacy\local\metadata\provider as metadata_provider;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
-use core_user;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\plugin\provider as plugin_provider;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\core_userlist_provider;
 
 /**
- * Privacy provider for the onesession quiz access rule.
- *
- * @package    quizaccess_onesession
+ * Privacy provider.
  */
-class provider implements privacy_provider
+class provider implements metadata_provider, plugin_provider, core_userlist_provider
 {
-
     /**
-     * Returns metadata about the data stored by this plugin.
+     * Describe stored data.
      *
-     * @param collection $collection The collection to add metadata to.
-     * @return collection The collection with metadata added.
+     * @param collection $collection
+     * @return collection
      */
     public static function get_metadata(collection $collection): collection
     {
@@ -58,19 +56,17 @@ class provider implements privacy_provider
     }
 
     /**
-     * Get the list of contexts that contain user data for the specified user.
+     * Return contexts containing user data for this plugin.
      *
-     * @param   int           $userid The user to search.
-     * @return  approved_contextlist  A list of contexts that may contain user data.
+     * @param int $userid
+     * @return contextlist
      */
-    public static function get_contexts_for_user(int $userid): approved_contextlist
+    public static function get_contexts_for_userid(int $userid): contextlist
     {
         global $DB;
 
-        // The constructor requires the full user object.
-        $user = core_user::get_user($userid, '*', MUST_EXIST);
+        $contextlist = new contextlist();
 
-        // This query now directly fetches the context IDs, not the course module IDs.
         $sql = "SELECT ctx.id
                   FROM {context} ctx
                   JOIN {course_modules} cm ON cm.id = ctx.instanceid
@@ -86,28 +82,27 @@ class provider implements privacy_provider
             'userid' => $userid,
         ];
 
-        // The result is now an array of integer IDs, as required by the constructor.
-        $contextids = array_values($DB->get_fieldset_sql($sql, $params));
+        $contextlist->add_from_sql($sql, $params);
 
-        return new approved_contextlist($user, 'quizaccess_onesession', $contextids);
+        return $contextlist;
     }
 
     /**
-     * Export all user data for the specified user, in the specified contexts.
+     * Export user data (none – audit data only).
      *
-     * @param   approved_contextlist $contextlist The list of contexts to export data from.
+     * @param approved_contextlist $contextlist
      */
     public static function export_user_data(approved_contextlist $contextlist)
     {
-        // Nothing to export – this is audit data.
+        // Intentionally nothing – this is teacher/invigilator audit.
     }
 
     /**
-     * Delete all data for all users in the specified context.
+     * Delete all data for all users in a context.
      *
-     * @param   context $context    The context to delete data from.
+     * @param \context $context
      */
-    public static function delete_data_for_all_users_in_context(context $context)
+    public static function delete_data_for_all_users_in_context(\context $context)
     {
         global $DB;
 
@@ -125,17 +120,92 @@ class provider implements privacy_provider
     }
 
     /**
-     * Delete all user data for the specified user, in the specified contexts.
+     * Delete data for specific users in a context list.
      *
-     * @param   approved_userlist $userlist The approved list of users and contexts.
+     * @param approved_contextlist $contextlist
      */
-    public static function delete_data_for_user(approved_userlist $userlist)
+    public static function delete_data_for_user(approved_contextlist $contextlist)
     {
         global $DB;
 
-        $userids = $userlist->get_userids();
-        foreach ($userids as $userid) {
-            $DB->delete_records('quizaccess_onesession_log', ['unlockedby' => $userid]);
+        $userid = $contextlist->get_user()->id;
+
+        foreach ($contextlist->get_contexts() as $context) {
+            if ($context->contextlevel != CONTEXT_MODULE) {
+                continue;
+            }
+
+            $cm = get_coursemodule_from_id(null, $context->instanceid);
+            if (!$cm || $cm->modname !== 'quiz') {
+                continue;
+            }
+
+            $quizid = $cm->instance;
+            $DB->delete_records('quizaccess_onesession_log', [
+                'quizid' => $quizid,
+                'unlockedby' => $userid,
+            ]);
         }
+    }
+
+    /**
+     * Add users who have data in this context.
+     *
+     * @param userlist $userlist
+     */
+    public static function get_users_in_context(userlist $userlist)
+    {
+        global $DB;
+
+        $context = $userlist->get_context();
+        if ($context->contextlevel != CONTEXT_MODULE) {
+            return;
+        }
+
+        $cm = get_coursemodule_from_id(null, $context->instanceid);
+        if (!$cm || $cm->modname !== 'quiz') {
+            return;
+        }
+
+        $quizid = $cm->instance;
+
+        $sql = "SELECT DISTINCT unlockedby
+                  FROM {quizaccess_onesession_log}
+                 WHERE quizid = :quizid";
+        $params = ['quizid' => $quizid];
+
+        $userlist->add_from_sql('unlockedby', $sql, $params);
+    }
+
+    /**
+     * Delete data for users in userlist.
+     *
+     * @param approved_userlist $userlist
+     */
+    public static function delete_data_for_users(approved_userlist $userlist)
+    {
+        global $DB;
+
+        $context = $userlist->get_context();
+        if ($context->contextlevel != CONTEXT_MODULE) {
+            return;
+        }
+
+        $cm = get_coursemodule_from_id(null, $context->instanceid);
+        if (!$cm || $cm->modname !== 'quiz') {
+            return;
+        }
+
+        $quizid = $cm->instance;
+        $userids = $userlist->get_userids();
+
+        list($insql, $inparams) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $params = ['quizid' => $quizid] + $inparams;
+
+        $DB->delete_records_select(
+            'quizaccess_onesession_log',
+            "quizid = :quizid AND unlockedby $insql",
+            $params
+        );
     }
 }

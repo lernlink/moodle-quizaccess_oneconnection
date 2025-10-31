@@ -44,10 +44,40 @@ $string['allowchangeinconnection'] = 'Allow change in connection for selected at
 $string['changeallowed'] = 'Change allowed';
 $string['changeinconnection'] = 'Change in connection';
 $string['notpossible'] = 'Not possible';
-$string['statusattempt'] = 'Status attempt';
+$string['statusattempt'] = 'Attempt status';
 $string['unlocksuccess'] = 'Connection change allowed for {$a} attempt(s).';
 $string['unlockedbyon'] = 'Allowed by {$a->teacher} on {$a->time}';
+
+// This one is used by the new table renderer I gave you.
+$string['allowedbyon'] = 'Allowed by {$a->fullname} on {$a->time}';
 
 // Privacy provider strings.
 $string['privacy:metadata:log'] = 'Stores a record of which user allowed a connection change for a quiz attempt and when it occurred.';
 $string['privacy:metadata:log:unlockedby'] = 'The ID of the user (typically a teacher or invigilator) who allowed the connection change.';
+
+// Extra strings for the mockup-like report UI.
+$string['filterheading'] = 'What to include in the report';
+$string['filterattemptsfrom'] = 'Attempts from';
+$string['filterattemptsthat'] = 'Attempts that are';
+$string['filterenrolledwithattempts'] = 'Enrolled users who have a quiz attempt';
+$string['displayoptions'] = 'Display options';
+$string['pagesize'] = 'Page size';
+$string['showreport'] = 'Show report';
+
+// Additional strings needed by the form.
+$string['whattoincludeinreport'] = 'What to include in the report';
+$string['attemptsfrom'] = 'Attempts from';
+$string['attemptsfrom_enrolledattempts'] = 'Enrolled users who have a quiz attempt';
+$string['attemptsfrom_enrollednoattempts'] = 'Enrolled users who do not have a quiz attempt';
+$string['attemptsfrom_enrolledall'] = 'Enrolled users who have, or do not have, a quiz attempt';
+$string['attemptsfrom_allattempts'] = 'All users who have a quiz attempt';
+$string['attemptsthat'] = 'Attempts that are';
+$string['state_notstarted'] = 'Not started';
+$string['state_inprogress'] = 'In progress';
+$string['state_overdue'] = 'Overdue';
+$string['state_submitted'] = 'Submitted';
+$string['state_finished'] = 'Finished';
+$string['state_abandoned'] = 'Never submitted';
+
+// Admin settings intro.
+$string['settingsintro'] = 'Configure the default behaviour for the “Block concurrent sessions” quiz access rule. You can pre-enable it for new quizzes and list IP subnets that should be ignored when building the session fingerprint.';

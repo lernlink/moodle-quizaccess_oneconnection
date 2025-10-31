@@ -27,22 +27,19 @@ defined('MOODLE_INTERNAL') || die();
 $observers = [
     [
         'eventname' => '\mod_quiz\event\attempt_abandoned',
-        'callback'  => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
     ],
 
-    [
-        'eventname' => '\mod_quiz\event\attempt_becameoverdue',
-        'callback'  => '\quizaccess_onesession\observers::unlock_attempt',
-    ],
+    // NOTE: we intentionally do NOT unlock on attempt_becameoverdue anymore.
 
     [
         'eventname' => '\mod_quiz\event\attempt_deleted',
-        'callback'  => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
     ],
 
     [
         'eventname' => '\mod_quiz\event\attempt_submitted',
-        'callback'  => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
     ],
 
 ];

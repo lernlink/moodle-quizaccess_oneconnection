@@ -36,7 +36,7 @@
       </KEYS>
     </TABLE>
 
-    <!-- NEW: audit of manual unlocks done from allowconnections.php -->
+    <!-- Audit of manual unlocks done from allowconnections.php -->
     <TABLE NAME="quizaccess_onesession_log"
       COMMENT="Logs of connection-change (unlock) actions for quiz attempts">
       <FIELDS>
@@ -53,7 +53,10 @@
           REFFIELDS="id" />
         <KEY NAME="unlockedby" TYPE="foreign" FIELDS="unlockedby" REFTABLE="user" REFFIELDS="id" />
       </KEYS>
-      <!-- You could add an INDEX on attemptid if you expect many rows per quiz. -->
+      <INDEXES>
+        <!-- For the report: we often want "latest unlock per attempt". -->
+        <INDEX NAME="attempt_time_idx" UNIQUE="false" FIELDS="attemptid, timeunlocked" />
+      </INDEXES>
     </TABLE>
 
   </TABLES>

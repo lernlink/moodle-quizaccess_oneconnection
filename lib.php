@@ -18,7 +18,7 @@
  * Lib file for the quiz access rule 'onesession'.
  *
  * @package    quizaccess_onesession
- * @copyright  2024 onwards, Adrian
+ * @copyright  2024 onwards
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,29 +27,35 @@ defined('MOODLE_INTERNAL') || die();
 use core\output\pix_icon;
 
 /**
- * Extends the quiz "More" menu with the 'Allow connection changes' link.
+ * Extends the quiz "More" / secondary menu with the 'Allow connection changes' link.
  *
- * This is the correct and only navigation hook for quiz sub-plugins. The quiz module
- * specifically looks for a function named {component_name}_extend_navigation.
+ * This is the standard navigation hook for quiz sub-plugins.
  *
- * @param navigation_node $morenode The navigation node for the "More" menu.
- * @param stdClass $quiz The quiz object.
- * @param stdClass $cm The course module object.
- * @param stdClass $course The course object.
+ * @param navigation_node $morenode
+ * @param stdClass $quiz
+ * @param stdClass $cm
+ * @param stdClass $course
  * @return void
  */
 function quizaccess_onesession_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void
 {
     $context = context_module::instance($cm->id);
-    if (has_capability('quizaccess/onesession:allowchange', $context)) {
-        $url = new moodle_url('/mod/quiz/accessrule/onesession/allowconnections.php', ['id' => $cm->id]);
-        $morenode->add(
-            get_string('allowconnections', 'quizaccess_onesession'),
-            $url,
-            navigation_node::TYPE_ACTION,
-            null,
-            null,
-            new pix_icon('i/unlock', '')
-        );
+    if (!has_capability('quizaccess/onesession:allowchange', $context)) {
+        return;
     }
+
+    // Only show the link if the rule is actually enabled on this quiz.
+    if (empty($quiz->onesessionenabled)) {
+        return;
+    }
+
+    $url = new moodle_url('/mod/quiz/accessrule/onesession/allowconnections.php', ['id' => $cm->id]);
+    $morenode->add(
+        get_string('allowconnections', 'quizaccess_onesession'),
+        $url,
+        navigation_node::TYPE_ACTION,
+        null,
+        null,
+        new pix_icon('i/unlock', '')
+    );
 }

@@ -15,31 +15,31 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session
+ * Admin settings for quizaccess_onesession.
  *
  * @package    quizaccess_onesession
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
-if ($ADMIN->fulltree && $hassiteconfig) {
+if ($ADMIN->fulltree) {
 
     $settings->add(
         new admin_setting_heading(
             'quizaccess_onesession/heading',
             get_string('generalsettings', 'admin'),
-            get_string('configintro', 'quiz')
+            get_string('settingsintro', 'quizaccess_onesession')
         )
     );
 
     $settings->add(
-        new admin_setting_configcheckbox_with_advanced(
+        new admin_setting_configcheckbox(
             'quizaccess_onesession/defaultenabled',
             get_string('onesession', 'quizaccess_onesession'),
             '',
-            ['value' => 0, 'adv' => true]
+            0
         )
     );
 
@@ -57,7 +57,8 @@ if ($ADMIN->fulltree && $hassiteconfig) {
             get_string('whitelist', 'quizaccess_onesession'),
             get_string('whitelist_desc', 'quizaccess_onesession'),
             '',
-            PARAM_TEXT
+            5,
+            60
         )
     );
 }

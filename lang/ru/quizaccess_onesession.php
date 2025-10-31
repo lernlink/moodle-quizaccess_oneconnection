@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language strings for quizaccess_onesession.
+ * Russian language strings for quizaccess_onesession.
  *
  * @package    quizaccess_onesession
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['anothersession'] = 'Вы пытаетесь получить доступ к этой попытке теста с другого устройства или браузера, а не с того, с которого начали. Если вам необходимо сменить устройство, обратитесь к экзаменатору.';
-$string['eventattemptblocked'] = 'Попытка студента продолжить тестирование используя другое устройство была заблокирована';
-$string['eventattemptunlocked'] = 'Студенту было разрешено продолжить попытку тестирования используя другое устройство';
+$string['eventattemptblocked'] = 'Попытка студента продолжить тестирование, используя другое устройство, была заблокирована';
+$string['eventattemptunlocked'] = 'Студенту было разрешено продолжить попытку тестирования, используя другое устройство';
 $string['onesession'] = 'Блокировать одновременные подключения';
 $string['onesession:allowchange'] = 'Разрешить смену подключения для попытки теста';
-$string['onesession:editenabled'] = 'Управлять возможностью установки "Блокировать одновременные подключения"';
+$string['onesession:editenabled'] = 'Управлять возможностью установки «Блокировать одновременные подключения»';
 $string['onesession_help'] = 'Если включено, пользователи могут продолжать попытку теста только в том же сеансе браузера. Любые попытки открыть ту же самую попытку теста с другого компьютера, устройства или браузера будут заблокированы.';
 $string['pluginname'] = 'Правило доступа к тесту: блокировка одновременных подключений';
 $string['privacy:metadata'] = 'Плагин сохраняет хеш строки для идентификации сессии клиентского устройства. Он также регистрирует, когда преподаватель разрешает смену подключения для попытки студента.';
@@ -51,3 +51,31 @@ $string['unlockedbyon'] = 'Разрешено {$a->teacher} в {$a->time}';
 // Privacy provider strings.
 $string['privacy:metadata:log'] = 'Сохраняет запись о том, какой пользователь разрешил смену подключения для попытки теста и когда это произошло.';
 $string['privacy:metadata:log:unlockedby'] = 'ID пользователя (обычно преподавателя или экзаменатора), который разрешил смену подключения.';
+
+// Extra strings for the mockup-like report UI.
+$string['filterheading'] = 'Что включить в отчёт';
+$string['filterattemptsfrom'] = 'Попытки от';
+$string['filterattemptsthat'] = 'Попытки со статусом';
+$string['filterenrolledwithattempts'] = 'Зачисленные пользователи, у которых есть попытка теста';
+$string['displayoptions'] = 'Параметры отображения';
+$string['pagesize'] = 'Размер страницы';
+$string['showreport'] = 'Показать отчёт';
+
+// Дополнительные строки для формы.
+$string['whattoincludeinreport'] = 'Что включить в отчёт';
+$string['attemptsfrom'] = 'Попытки от';
+$string['attemptsfrom_enrolledattempts'] = 'Зачисленные пользователи, у которых есть попытка теста';
+$string['attemptsfrom_enrollednoattempts'] = 'Зачисленные пользователи, у которых нет попытки теста';
+$string['attemptsfrom_enrolledall'] = 'Зачисленные пользователи, у которых есть или нет попытки теста';
+$string['attemptsfrom_allattempts'] = 'Все пользователи, у которых есть попытка теста';
+$string['attemptsthat'] = 'Попытки со статусом';
+$string['state_notstarted'] = 'Не начата';
+$string['state_inprogress'] = 'В процессе';
+$string['state_overdue'] = 'Просрочена';
+$string['state_submitted'] = 'Отправлена';
+$string['state_finished'] = 'Завершена';
+$string['state_abandoned'] = 'Не отправлена';
+$string['allowedbyon'] = 'Разрешено {$a->fullname} в {$a->time}';
+
+// Admin settings intro.
+$string['settingsintro'] = 'Настройте поведение правила «Блокировать одновременные подключения»: можно включить его по умолчанию для новых тестов и указать IP-сети, которые не нужно учитывать при проверке сессии.';
