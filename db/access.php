@@ -15,16 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capabilities for the quiz access rule 'onesession'.
+ * Capabilities for the "Block concurrent sessions" quiz access rule.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    access
+ * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
+    // Allow a teacher/examiner to unlock an attempt so the student can continue from another device.
     'quizaccess/onesession:allowchange' => [
         'riskbitmask' => RISK_PERSONAL,
         'captype' => 'write',
@@ -36,6 +38,8 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'mod/quiz:viewreports',
     ],
+
+    // Allow a teacher to enable/disable the rule on a per-quiz basis.
     'quizaccess/onesession:editenabled' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',

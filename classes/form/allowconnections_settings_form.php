@@ -17,8 +17,9 @@
 /**
  * Filter / settings form for the allowconnections page.
  *
- * @package    quizaccess_onesession
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    form
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace quizaccess_onesession\form;
@@ -28,9 +29,24 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/formslib.php');
 
+/**
+ * Form used on the "Allow connection changes" report-like page.
+ */
 class allowconnections_settings_form extends \moodleform
 {
-    public function definition()
+
+    /**
+     * Build the form definition.
+     *
+     * Custom data:
+     *  - cmid
+     *  - attemptsfrom
+     *  - attemptstate (array of states to preselect)
+     *  - pagesize
+     *
+     * @return void
+     */
+    public function definition(): void
     {
         $mform = $this->_form;
 
@@ -40,7 +56,7 @@ class allowconnections_settings_form extends \moodleform
         $attemptstate = $this->_customdata['attemptstate'] ?? [];
         $pagesize = $this->_customdata['pagesize'] ?? 30;
 
-        // IMPORTANT: keep cmid on POST.
+        // Keep cmid on POST.
         $mform->addElement('hidden', 'id', $cmid);
         $mform->setType('id', PARAM_INT);
 

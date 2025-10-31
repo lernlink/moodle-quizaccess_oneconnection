@@ -17,8 +17,12 @@
 /**
  * Privacy provider for the onesession quiz access rule.
  *
- * @package    quizaccess_onesession
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * This plugin stores only audit information about which teacher/invigilator
+ * allowed a connection change for which quiz attempt.
+ *
+ * @package     quizaccess_onesession
+ * @category    privacy
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace quizaccess_onesession\privacy;
@@ -37,11 +41,12 @@ use core_privacy\local\request\core_userlist_provider;
  */
 class provider implements metadata_provider, plugin_provider, core_userlist_provider
 {
+
     /**
      * Describe stored data.
      *
-     * @param collection $collection
-     * @return collection
+     * @param collection $collection Current metadata collection.
+     * @return collection Updated collection.
      */
     public static function get_metadata(collection $collection): collection
     {
@@ -58,8 +63,10 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     /**
      * Return contexts containing user data for this plugin.
      *
-     * @param int $userid
-     * @return contextlist
+     * A user may appear here if they unlocked another user's attempt.
+     *
+     * @param int $userid The user ID.
+     * @return contextlist List of contexts.
      */
     public static function get_contexts_for_userid(int $userid): contextlist
     {
@@ -88,9 +95,10 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Export user data (none – audit data only).
+     * Export user data (none – audit data only, not owned by the user).
      *
-     * @param approved_contextlist $contextlist
+     * @param approved_contextlist $contextlist Approved contexts.
+     * @return void
      */
     public static function export_user_data(approved_contextlist $contextlist)
     {
@@ -100,7 +108,8 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     /**
      * Delete all data for all users in a context.
      *
-     * @param \context $context
+     * @param \context $context The context being deleted.
+     * @return void
      */
     public static function delete_data_for_all_users_in_context(\context $context)
     {
@@ -120,9 +129,10 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Delete data for specific users in a context list.
+     * Delete data for a specific user in a list of contexts.
      *
-     * @param approved_contextlist $contextlist
+     * @param approved_contextlist $contextlist Approved contexts.
+     * @return void
      */
     public static function delete_data_for_user(approved_contextlist $contextlist)
     {
@@ -151,7 +161,8 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     /**
      * Add users who have data in this context.
      *
-     * @param userlist $userlist
+     * @param userlist $userlist The userlist to populate.
+     * @return void
      */
     public static function get_users_in_context(userlist $userlist)
     {
@@ -178,9 +189,10 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Delete data for users in userlist.
+     * Delete data for multiple users in the given context.
      *
-     * @param approved_userlist $userlist
+     * @param approved_userlist $userlist The approved user list.
+     * @return void
      */
     public static function delete_data_for_users(approved_userlist $userlist)
     {

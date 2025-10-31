@@ -15,11 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Allow connection changes page (teacher view).
+ * Teacher/invigilator page to allow connection changes for quiz attempts.
  *
- * @package    quizaccess_onesession
- * @copyright  2025
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * This page behaves similarly to a quiz report:
+ *  - has filters for enrolled users / attempts;
+ *  - supports pagination, sorting and initials bars;
+ *  - allows unlocking a single attempt or multiple selected attempts;
+ *  - logs every unlock action.
+ *
+ * @package     quizaccess_onesession
+ * @copyright   2025
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require(__DIR__ . '/../../../../config.php');
@@ -29,9 +35,9 @@ require_once($CFG->dirroot . '/mod/quiz/accessrule/onesession/classes/form/allow
 
 use core_user;
 
-$id = required_param('id', PARAM_INT); // cmid.
+$id = required_param('id', PARAM_INT); // Course module ID.
 
-// Filters (like quiz report):
+// Filters (like quiz report).
 $attemptsfrom = optional_param('attemptsfrom', 'enrolledattempts', PARAM_ALPHA); // enrolledattempts | enrollednoattempts | enrolledall | allattempts.
 $pagesize = optional_param('pagesize', 30, PARAM_INT);
 $firstnameinitial = optional_param('tifirst', '', PARAM_ALPHA);
@@ -63,7 +69,7 @@ require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 require_capability('quizaccess/onesession:allowchange', $context);
 
-// We need the course context to detect “teachers” (roles that can preview).
+// We need the course context to detect roles that can preview (not students).
 $coursecontext = context_course::instance($course->id);
 
 $PAGE->set_url('/mod/quiz/accessrule/onesession/allowconnections.php', [
@@ -73,20 +79,18 @@ $PAGE->set_title($quiz->name);
 $PAGE->set_heading($course->fullname);
 $PAGE->set_pagelayout('report');
 
-// ----------------------------------------------------------------------
-// 0) Handle single-row unlock (?action=unlock&attemptid=...).
-// ----------------------------------------------------------------------
+// Handle single-row unlock.
 $action = optional_param('action', '', PARAM_ALPHA);
 if ($action === 'unlock' && confirm_sesskey()) {
     $attemptid = required_param('attemptid', PARAM_INT);
 
-    // Extra safety: only unlock if attempt is in progress or overdue.
+    // Only unlock attempts that are in progress or overdue.
     $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid], 'id,userid,state', IGNORE_MISSING);
     if ($attempt && ($attempt->state === 'inprogress' || $attempt->state === 'overdue')) {
         // Delete session binding.
         $DB->delete_records('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
 
-        // Log.
+        // Log the action (if the table exists).
         $log = (object) [
             'quizid' => $quiz->id,
             'attemptid' => $attemptid,
@@ -96,10 +100,10 @@ if ($action === 'unlock' && confirm_sesskey()) {
         try {
             $DB->insert_record('quizaccess_onesession_log', $log);
         } catch (dml_exception $e) {
-            // ignore if table missing
+            // For older sites where the log table is not yet present, we simply continue.
         }
 
-        // Fire the event so it reaches logstores.
+        // Fire the event so logstores receive the action.
         $event = \quizaccess_onesession\event\attempt_unlocked::create([
             'objectid' => $attemptid,
             'relateduserid' => $attempt->userid ?? 0,
@@ -168,9 +172,7 @@ $normalizedattemptstate = [
     'abandoned' => empty($attemptstate['abandoned']) ? 0 : 1,
 ];
 
-// ----------------------------------------------------------------------
-// 1) Handle POST (unlock selected) – FIXED to keep filters.
-// ----------------------------------------------------------------------
+// Handle POST (unlock selected)
 if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
     $selected = optional_param_array('attemptid', [], PARAM_INT);
     if (!empty($selected)) {
@@ -192,7 +194,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
             try {
                 $DB->insert_record('quizaccess_onesession_log', $log);
             } catch (dml_exception $e) {
-                // ignore
+                // Silently continue if the log table is not available.
             }
 
             // Fire event per attempt.
@@ -206,7 +208,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
         }
     }
 
-    // NEW: preserve filters / initials / attemptstate on bulk unlock too.
+    // Preserve filters / initials / attemptstate on bulk unlock too.
     $backurl = new moodle_url($PAGE->url, [
         'id' => $id,
         'attemptsfrom' => $attemptsfrom,
@@ -270,7 +272,7 @@ if ($stringman->string_exists('statistics', 'quiz')) {
     ]))->out(false)] = get_string('statistics', 'quiz');
 }
 
-// Our page:
+// Our page.
 $reportoptions[$PAGE->url->out(false)] = get_string('allowconnections', 'quizaccess_onesession');
 
 $urlselect = new url_select($reportoptions, $PAGE->url->out(false), null);
@@ -282,12 +284,10 @@ echo html_writer::start_div('container-fluid tertiary-navigation');
 echo html_writer::div($OUTPUT->render($urlselect), 'navitem');
 echo html_writer::end_div();
 
-// 2) Our filter form.
+// Filter form.
 $mform->display();
 
-// ----------------------------------------------------------------------
-// Custom initials bars (because core initials_bar() needed a non-null baseurl).
-// ----------------------------------------------------------------------
+// Custom initials bars (because core initials_bar() needs a baseurl).
 $letters = range('A', 'Z');
 
 echo html_writer::start_div('initialsbar');
@@ -314,10 +314,6 @@ foreach ($letters as $letter) {
 }
 echo html_writer::end_div();
 
-// ----------------------------------------------------------------------
-// 4) Data query
-// ----------------------------------------------------------------------
-
 // Build state filter SQL (for attempts).
 $statelikes = [];
 if ($normalizedattemptstate['notstarted']) {
@@ -343,7 +339,7 @@ if (!empty($statelikes)) {
     $statewhere = '(' . implode(' OR ', $statelikes) . ')';
 }
 
-// We will always need the “latest unlock per attempt” join.
+// Latest unlock per attempt – used for the "change allowed" column.
 $latestunlockjoin = "
     LEFT JOIN (
         SELECT ql1.*
@@ -360,7 +356,7 @@ $latestunlockjoin = "
 // Start WHERE list.
 $wheres = ["u.deleted = 0"];
 
-// We will build $params **per branch** so we don’t pass unused params.
+// Build params per branch.
 $params = [
     'quizid' => $quiz->id,
 ];
@@ -376,8 +372,8 @@ switch ($attemptsfrom) {
                        AND rc.capability = :capquizpreview
                        AND rc.permission = " . (int) CAP_ALLOW . "
                   LEFT JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
-        $wheres[] = "rc.id IS NULL";     // not a teacher
-        $wheres[] = "qa.id IS NULL";     // no attempts
+        $wheres[] = "rc.id IS NULL";     // Exclude teachers / managers that can preview.
+        $wheres[] = "qa.id IS NULL";     // Keep only users without attempts.
         $params['courseid'] = $course->id;
         $params['coursectxid'] = $coursecontext->id;
         $params['capquizpreview'] = 'mod/quiz:preview';
@@ -392,7 +388,7 @@ switch ($attemptsfrom) {
                        AND rc.capability = :capquizpreview
                        AND rc.permission = " . (int) CAP_ALLOW . "
                   LEFT JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
-        $wheres[] = "rc.id IS NULL";     // students only
+        $wheres[] = "rc.id IS NULL";     // Students only.
         if ($statewhere !== '') {
             $wheres[] = "(qa.id IS NULL OR $statewhere)";
         }
@@ -419,7 +415,7 @@ switch ($attemptsfrom) {
                        AND rc.capability = :capquizpreview
                        AND rc.permission = " . (int) CAP_ALLOW . "
                   JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
-        $wheres[] = "rc.id IS NULL";     // students only
+        $wheres[] = "rc.id IS NULL";     // Students only.
         if ($statewhere !== '') {
             $wheres[] = $statewhere;
         }
@@ -429,7 +425,7 @@ switch ($attemptsfrom) {
         break;
 }
 
-// Initials filtering AFTER branch.
+// Initials filtering.
 if ($firstnameinitial !== '') {
     $wheres[] = $DB->sql_like('u.firstname', ':tifirst', false, false);
     $params['tifirst'] = $firstnameinitial . '%';
@@ -489,7 +485,7 @@ $table->setup();
 $offset = $table->get_page_start();
 $perpage = $table->get_page_size();
 
-// Sorting from the table (we must honor flexible_table choices).
+// Sorting from the table (we must honour flexible_table choices).
 $sortcolumns = $table->get_sort_columns();
 $orderby = [];
 foreach ($sortcolumns as $column => $sortdirection) {

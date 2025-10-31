@@ -15,11 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session
+ * Event triggered when a student is blocked from continuing an attempt
+ * because it was started in another session.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    event
+ * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace quizaccess_onesession\event;
@@ -30,17 +32,17 @@ use moodle_url;
 
 /**
  * Attempt blocked event.
- *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class attempt_blocked extends base {
+class attempt_blocked extends base
+{
 
     /**
-     * Init method.
+     * Initialises the event data.
+     *
+     * @return void
      */
-    protected function init() {
+    protected function init(): void
+    {
         $this->data['objecttable'] = 'quiz_attempts';
         $this->data['crud'] = 'r';
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
@@ -51,7 +53,8 @@ class attempt_blocked extends base {
      *
      * @return string
      */
-    public static function get_name() {
+    public static function get_name(): string
+    {
         return get_string('eventattemptblocked', 'quizaccess_onesession');
     }
 
@@ -60,17 +63,19 @@ class attempt_blocked extends base {
      *
      * @return string
      */
-    public function get_description() {
-        return "Attempt of user with id '$this->userid' to continue attempt with id '$this->objectid' for the quiz with "
-                . "course module id '$this->contextinstanceid' using other device was blocked.";
+    public function get_description(): string
+    {
+        return "Attempt of user with id '{$this->userid}' to continue attempt with id '{$this->objectid}' for the quiz "
+            . "with course module id '{$this->contextinstanceid}' using another device was blocked.";
     }
 
     /**
-     * Get URL related to the action
+     * Get URL related to the action.
      *
      * @return moodle_url
      */
-    public function get_url() {
+    public function get_url(): moodle_url
+    {
         return new moodle_url('/mod/quiz/review.php', ['attempt' => $this->objectid]);
     }
 
@@ -80,7 +85,8 @@ class attempt_blocked extends base {
      * @throws coding_exception
      * @return void
      */
-    protected function validate_data() {
+    protected function validate_data(): void
+    {
         parent::validate_data();
 
         if (!isset($this->relateduserid)) {
@@ -93,71 +99,22 @@ class attempt_blocked extends base {
     }
 
     /**
-     * This is used when restoring course logs where it is required that we
-     * map the objectid to it's new value in the new course.
+     * Mapping for objectid during restore.
      *
-     * Does nothing in the base class except display a debugging message warning
-     * the user that the event does not contain the required functionality to
-     * map this information. For events that do not store an objectid this won't
-     * be called, so no debugging message will be displayed.
-     *
-     * Example of usage:
-     *
-     * return array('db' => 'assign_submissions', 'restore' => 'submission');
-     *
-     * If the objectid can not be mapped during restore set the value to \core\event\base::NOT_MAPPED, example -
-     *
-     * return array('db' => 'some_table', 'restore' => \core\event\base::NOT_MAPPED);
-     *
-     * Note - it isn't necessary to specify the 'db' and 'restore' values in this case, so you can also use -
-     *
-     * return \core\event\base::NOT_MAPPED;
-     *
-     * The 'db' key refers to the database table and the 'restore' key refers to
-     * the name of the restore element the objectid is associated with. In many
-     * cases these will be the same.
-     *
-     * @return string the name of the restore mapping the objectid links to
+     * @return array|string
      */
-    public static function get_objectid_mapping() {
+    public static function get_objectid_mapping()
+    {
         return ['db' => 'quiz_attempts', 'restore' => 'quiz_attempt'];
     }
 
     /**
-     * This is used when restoring course logs where it is required that we
-     * map the information in 'other' to it's new value in the new course.
+     * Mapping for additional data during restore.
      *
-     * Does nothing in the base class except display a debugging message warning
-     * the user that the event does not contain the required functionality to
-     * map this information. For events that do not store any other information this
-     * won't be called, so no debugging message will be displayed.
-     *
-     * Example of usage:
-     *
-     * $othermapped = array();
-     * $othermapped['discussionid'] = array('db' => 'forum_discussions', 'restore' => 'forum_discussion');
-     * $othermapped['forumid'] = array('db' => 'forum', 'restore' => 'forum');
-     * return $othermapped;
-     *
-     * If an id can not be mapped during restore we set it to \core\event\base::NOT_MAPPED, example -
-     *
-     * $othermapped = array();
-     * $othermapped['someid'] = array('db' => 'some_table', 'restore' => \core\event\base::NOT_MAPPED);
-     * return $othermapped;
-     *
-     * Note - it isn't necessary to specify the 'db' and 'restore' values in this case, so you can also use -
-     *
-     * $othermapped = array();
-     * $othermapped['someid'] = \core\event\base::NOT_MAPPED;
-     * return $othermapped;
-     *
-     * The 'db' key refers to the database table and the 'restore' key refers to
-     * the name of the restore element the other value is associated with. In many
-     * cases these will be the same.
-     *
-     * @return array an array of other values and their corresponding mapping
+     * @return array
      */
-    public static function get_other_mapping() {
+    public static function get_other_mapping(): array
+    {
         $othermapped = [];
         $othermapped['quizid'] = ['db' => 'quiz', 'restore' => 'quiz'];
 

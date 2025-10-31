@@ -15,11 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Lib file for the quiz access rule 'onesession'.
+ * Library for the quiz access rule 'onesession'.
  *
- * @package    quizaccess_onesession
- * @copyright  2024 onwards
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Contains navigation hooks and other integration points.
+ *
+ * @package     quizaccess_onesession
+ * @category    lib
+ * @copyright   2024 onwards
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -31,10 +34,10 @@ use core\output\pix_icon;
  *
  * This is the standard navigation hook for quiz sub-plugins.
  *
- * @param navigation_node $morenode
- * @param stdClass $quiz
- * @param stdClass $cm
- * @param stdClass $course
+ * @param navigation_node $morenode The parent "more" node.
+ * @param stdClass $quiz The quiz activity record.
+ * @param stdClass $cm The course module.
+ * @param stdClass $course The course record.
  * @return void
  */
 function quizaccess_onesession_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void
@@ -44,7 +47,7 @@ function quizaccess_onesession_extend_navigation(navigation_node $morenode, stdC
         return;
     }
 
-    // Only show the link if the rule is actually enabled on this quiz.
+    // Only show the link if the rule is enabled on this quiz.
     if (empty($quiz->onesessionenabled)) {
         return;
     }

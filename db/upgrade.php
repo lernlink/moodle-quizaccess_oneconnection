@@ -15,19 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade logic for the quiz access rule 'onesession'.
+ * Upgrade logic for the quizaccess_onesession plugin.
  *
- * @package    quizaccess_onesession
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    upgrade
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Function to upgrade the quizaccess_onesession plugin.
+ * Upgrade routine for quizaccess_onesession.
  *
- * @param int $oldversion
- * @return bool
+ * @param int $oldversion The version of the plugin that is currently installed.
+ * @return bool Always true.
  */
 function xmldb_quizaccess_onesession_upgrade($oldversion)
 {

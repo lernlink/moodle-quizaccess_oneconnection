@@ -15,11 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session
+ * Restore handler for the onesession quiz access plugin.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    backup
+ * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -28,20 +29,14 @@ require_once($CFG->dirroot . '/mod/quiz/backup/moodle2/restore_mod_quiz_access_s
 
 /**
  * Provides the information to restore the onesession quiz access plugin.
- *
- * Backup will contatin several <quizaccess_onesession> tags, containing required
- * <subnetid>.
- *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_quizaccess_onesession_subplugin extends restore_mod_quiz_access_subplugin
 {
 
     /**
-     * Use this method to describe the XML paths that store your sub-plugin's
-     * settings for a particular quiz.
+     * Describe the XML paths that store the subplugin's data.
+     *
+     * @return array
      */
     protected function define_quiz_subplugin_structure()
     {
@@ -52,10 +47,12 @@ class restore_quizaccess_onesession_subplugin extends restore_mod_quiz_access_su
     }
 
     /**
-     * Processes the quizaccess_onesession element, if it is in the file.
-     * @param array $data the data read from the XML file.
+     * Restore the main plugin setting.
+     *
+     * @param array $data Data read from the XML file.
+     * @return void
      */
-    public function process_quizaccess_onesession($data)
+    public function process_quizaccess_onesession($data): void
     {
         global $DB;
 
@@ -64,7 +61,13 @@ class restore_quizaccess_onesession_subplugin extends restore_mod_quiz_access_su
         $DB->insert_record('quizaccess_onesession', $data);
     }
 
-    public function process_log($data)
+    /**
+     * Restore a single audit log entry.
+     *
+     * @param array $data Data read from the XML file.
+     * @return void
+     */
+    public function process_log($data): void
     {
         global $DB;
         $data = (object) $data;

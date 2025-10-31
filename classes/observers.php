@@ -15,9 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session
+ * Event observers for the onesession rule.
  *
  * @package    quizaccess_onesession
+ * @category    event
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,20 +28,23 @@ namespace quizaccess_onesession;
 use core\event\base;
 
 /**
- * Class for event observers
+ * Event observer callbacks.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * These observers remove the stored session fingerprint when an attempt
+ * is no longer active (finished, abandoned, submitted or deleted).
  */
-class observers {
+class observers
+{
 
     /**
-     * Remove unneeded session information when attempt finished, abandoned, overdue or deleted.
+     * Remove unneeded session information when the attempt is finished, abandoned,
+     * submitted or deleted.
      *
-     * @param base $event
+     * @param base $event The event object.
+     * @return void
      */
-    public static function unlock_attempt(base $event) {
+    public static function unlock_attempt(base $event): void
+    {
         global $DB;
 
         $attemptid = $event->objectid;
@@ -48,5 +52,4 @@ class observers {
             $DB->delete_records('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
         }
     }
-
 }

@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session.
+ * Quiz access rule that binds a quiz attempt to a single browser session / device.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @copyright   2016 Vadim Dvorovenko
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -31,20 +31,24 @@ use mod_quiz\quiz_settings;
 use quizaccess_onesession\event\attempt_blocked;
 
 /**
- * Rule class.
+ * Access rule that disallows continuing the same attempt from a different session/device.
  *
- * @package    quizaccess_onesession
+ * The plugin works by:
+ * - Creating a per-attempt session record the first time the attempt is accessed.
+ * - Storing a signed "session fingerprint" that describes the current client.
+ * - Validating the stored fingerprint on every subsequent access.
+ * - Blocking the attempt (via the preflight form) when the fingerprint changes.
  */
 class quizaccess_onesession extends access_rule_base
 {
+
     /**
-     * Return an appropriately configured instance of this rule, if it is applicable
-     * to the given quiz, otherwise return null.
+     * Create an instance of this rule if applicable to the given quiz.
      *
-     * @param quiz_settings $quizobj information about the quiz in question.
-     * @param int $timenow the time that should be considered as 'now'.
-     * @param bool $canignoretimelimits whether the current user is exempt from time limits.
-     * @return self|null
+     * @param quiz_settings $quizobj Information about the quiz.
+     * @param int $timenow Current timestamp.
+     * @param bool $canignoretimelimits Whether the current user is exempt from time limits (ignored).
+     * @return self|null Returns a rule instance if enabled, otherwise null.
      */
     public static function make(quiz_settings $quizobj, $timenow, $canignoretimelimits)
     {
@@ -57,7 +61,12 @@ class quizaccess_onesession extends access_rule_base
     /**
      * Build a per-attempt session hash (secret + HMAC of current session string).
      *
-     * @return string
+     * The format is: "<hex-secret>|<hmac>", where:
+     * - the secret is a random binary string (hex-encoded);
+     * - the HMAC is calculated over the current session fingerprint.
+     *
+     * @return string Session hash in the format "secret|hmac".
+     * @throws Exception If random_bytes() fails.
      */
     private function get_session_hash(): string
     {
@@ -67,13 +76,19 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Build a stable string describing the current session/device.
+     * Build a stable string describing the current browser session and device.
      *
-     * @return string
+     * Components:
+     * 1. The current Moodle session key.
+     * 2. The client IP address (unless it belongs to a whitelisted subnet).
+     * 3. The HTTP user agent.
+     *
+     * @return string Fingerprint string for the current request.
      */
     private function get_session_string(): string
     {
         $sessionstring = [];
+
         // Moodle session.
         $sessionstring[] = sesskey();
 
@@ -97,10 +112,10 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Validate a stored "secret|hash" against the current request.
+     * Validate a stored "secret|hash" string against the current request.
      *
-     * @param string $secretandhash
-     * @return bool
+     * @param string $secretandhash The value stored in DB.
+     * @return bool True if the current request matches the stored fingerprint, false otherwise.
      */
     private function validate_session_hash($secretandhash): bool
     {
@@ -123,10 +138,10 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Check if the attempt is blocked (i.e. already tied to another session/device).
+     * Check whether the given attempt is currently blocked because it is tied to another session.
      *
-     * @param int $attemptid
-     * @return bool
+     * @param int $attemptid Quiz attempt ID.
+     * @return bool True if the attempt is blocked, false if it is either unbound or valid for this session.
      */
     private function is_attempt_blocked(int $attemptid): bool
     {
@@ -149,10 +164,14 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Is check before attempt start is required.
+     * Whether a preflight check is required for this attempt.
      *
-     * @param int|null $attemptid the id of the current attempt, if there is one.
-     * @return bool
+     * This method is called before opening the attempt. If we detect that the attempt
+     * was started elsewhere (i.e. another device/session), we will show the preflight
+     * form that only contains a static error message.
+     *
+     * @param int|null $attemptid The current attempt ID, if any.
+     * @return bool True if the preflight form must be shown.
      */
     public function is_preflight_check_required($attemptid): bool
     {
@@ -169,6 +188,7 @@ class quizaccess_onesession extends access_rule_base
 
         $session = $DB->get_record('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
         if (empty($session)) {
+            // First access to this attempt – create a session binding.
             $session = new stdClass();
             $session->quizid = $this->quiz->id;
             $session->attemptid = $attemptid;
@@ -181,6 +201,7 @@ class quizaccess_onesession extends access_rule_base
             return false;
         }
 
+        // Log the blocked attempt for teachers / invigilators.
         $params = [
             'objectid' => $attemptobj->get_attemptid(),
             'relateduserid' => $attemptobj->get_userid(),
@@ -197,11 +218,11 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Add fields to the preflight form.
+     * Add fields to the preflight form when we have to block the attempt.
      *
-     * @param \mod_quiz\form\preflight_check_form|\mod_quiz\preflight_check_form $quizform
-     * @param \MoodleQuickForm $mform
-     * @param int|null $attemptid
+     * @param \mod_quiz\form\preflight_check_form|\mod_quiz\preflight_check_form $quizform Current preflight form wrapper.
+     * @param \MoodleQuickForm $mform The actual form.
+     * @param int|null $attemptid Current attempt ID.
      * @return void
      */
     public function add_preflight_check_form_fields($quizform, $mform, $attemptid)
@@ -210,6 +231,7 @@ class quizaccess_onesession extends access_rule_base
             return;
         }
 
+        // Human-readable message for the student.
         $mform->addElement(
             'static',
             'onesessionblocked',
@@ -217,6 +239,7 @@ class quizaccess_onesession extends access_rule_base
             get_string('anothersession', 'quizaccess_onesession')
         );
 
+        // Hide submit/cancel buttons to prevent continuing.
         $mform->addElement(
             'static',
             'onesessioncss',
@@ -230,6 +253,7 @@ class quizaccess_onesession extends access_rule_base
             </style>'
         );
 
+        // Provide teachers/invigilators with a link to unblock.
         $context = $this->quizobj->get_context();
         if (has_capability('quizaccess/onesession:allowchange', $context)) {
             $url = new \moodle_url(
@@ -240,6 +264,7 @@ class quizaccess_onesession extends access_rule_base
             $mform->addElement('static', 'onesessionmanage', '', $link);
         }
 
+        // Extra safety for any themes that still display the buttons.
         $js = <<<JS
             <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -257,13 +282,15 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Validate preflight submission.
+     * Validate the preflight form submission.
      *
-     * @param array $data
-     * @param array $files
-     * @param array $errors
-     * @param int|null $attemptid
-     * @return array
+     * If the attempt is still blocked for the current session, we return an error.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @param array $errors Existing form errors.
+     * @param int|null $attemptid Current attempt ID.
+     * @return array Updated list of errors.
      */
     public function validate_preflight_check($data, $files, $errors, $attemptid): array
     {
@@ -274,9 +301,11 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Return null so Moodle does NOT throw an exception screen.
+     * Return null so Moodle does NOT show a generic exception screen.
      *
-     * @return string|null
+     * We handle blocking via the preflight form instead.
+     *
+     * @return string|null Always null.
      */
     public function prevent_access()
     {
@@ -284,9 +313,9 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Information shown on quiz view page.
+     * Information shown on the quiz view page.
      *
-     * @return array|string
+     * @return array|string One or more messages to display.
      */
     public function description()
     {
@@ -312,9 +341,10 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Setup attempt page – no-op.
+     * Setup attempt page – intentionally left empty.
      *
-     * @param moodle_page $page
+     * @param moodle_page $page Current page.
+     * @return void
      */
     public function setup_attempt_page($page)
     {
@@ -322,10 +352,11 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Add fields to quiz settings form.
+     * Add per-quiz settings to the quiz settings form.
      *
-     * @param mod_quiz_mod_form $quizform
-     * @param MoodleQuickForm $mform
+     * @param mod_quiz_mod_form $quizform The quiz form.
+     * @param MoodleQuickForm $mform The MoodleQuickForm instance.
+     * @return void
      */
     public static function add_settings_form_fields(mod_quiz_mod_form $quizform, MoodleQuickForm $mform)
     {
@@ -334,26 +365,24 @@ class quizaccess_onesession extends access_rule_base
         }
 
         $pluginconfig = get_config('quizaccess_onesession') ?: (object) [];
-
         $defaultenabled = isset($pluginconfig->defaultenabled) ? (int) $pluginconfig->defaultenabled : 0;
 
         $mform->addElement('checkbox', 'onesessionenabled', get_string('onesession', 'quizaccess_onesession'));
         $mform->setDefault('onesessionenabled', $defaultenabled);
-
         $mform->addHelpButton('onesessionenabled', 'onesession', 'quizaccess_onesession');
     }
 
     /**
-     * Save settings.
+     * Save the per-quiz setting when the quiz is saved.
      *
-     * @param object $quiz
+     * @param object $quiz Quiz data object.
+     * @return void
      */
     public static function save_settings($quiz)
     {
         global $DB;
 
         // Sometimes this is called in contexts where no CM/context is available (restore, CLI).
-        // In that case we fall back to the old behavior.
         $cm = get_coursemodule_from_instance('quiz', $quiz->id, $quiz->course, false, IGNORE_MISSING);
         if ($cm) {
             $context = \context_module::instance($cm->id, IGNORE_MISSING);
@@ -368,9 +397,11 @@ class quizaccess_onesession extends access_rule_base
         }
 
         if (empty($quiz->onesessionenabled)) {
+            // Rule disabled – remove all related records.
             $DB->delete_records('quizaccess_onesession', ['quizid' => $quiz->id]);
             $DB->delete_records('quizaccess_onesession_sess', ['quizid' => $quiz->id]);
         } else {
+            // Rule enabled – ensure there is a record.
             if (!$DB->record_exists('quizaccess_onesession', ['quizid' => $quiz->id])) {
                 $record = new stdClass();
                 $record->quizid = $quiz->id;
@@ -381,9 +412,10 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Delete settings when quiz is deleted.
+     * Delete all data when the quiz itself is deleted.
      *
-     * @param object $quiz
+     * @param object $quiz Quiz data object.
+     * @return void
      */
     public static function delete_settings($quiz)
     {
@@ -395,10 +427,10 @@ class quizaccess_onesession extends access_rule_base
     }
 
     /**
-     * Return SQL needed to load settings.
+     * Return SQL needed to load the per-quiz setting.
      *
-     * @param int $quizid
-     * @return array
+     * @param int $quizid Quiz ID.
+     * @return array Array with select, join, params.
      */
     public static function get_settings_sql($quizid): array
     {

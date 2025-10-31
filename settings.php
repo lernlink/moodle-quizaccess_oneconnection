@@ -15,9 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Admin settings for quizaccess_onesession.
+ * Admin settings for the "Block concurrent sessions" quiz access rule.
  *
- * @package    quizaccess_onesession
+ * @package     quizaccess_onesession
+ * @category    admin
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
 
+    // General section.
     $settings->add(
         new admin_setting_heading(
             'quizaccess_onesession/heading',
@@ -34,6 +36,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
+    // Whether the rule should be pre-enabled for new quizzes.
     $settings->add(
         new admin_setting_configcheckbox(
             'quizaccess_onesession/defaultenabled',
@@ -43,6 +46,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
+    // Advanced section.
     $settings->add(
         new admin_setting_heading(
             'quizaccess_onesession/headingadvanced',
@@ -51,6 +55,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
+    // List of subnets that should not be used when calculating the session fingerprint.
     $settings->add(
         new admin_setting_configtextarea(
             'quizaccess_onesession/whitelist',

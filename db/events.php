@@ -15,28 +15,32 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Rule that blocks attempt to open same quiz attempt in other session
+ * Event observers mapping for quizaccess_onesession.
  *
- * @package    quizaccess_onesession
- * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     quizaccess_onesession
+ * @category    event
+ * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $observers = [
+    // When an attempt is abandoned, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_abandoned',
         'callback' => '\quizaccess_onesession\observers::unlock_attempt',
     ],
 
-    // NOTE: we intentionally do NOT unlock on attempt_becameoverdue anymore.
+    // We intentionally do NOT unlock on attempt_becameoverdue anymore.
 
+    // When an attempt is deleted, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_deleted',
         'callback' => '\quizaccess_onesession\observers::unlock_attempt',
     ],
 
+    // When an attempt is submitted, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_submitted',
         'callback' => '\quizaccess_onesession\observers::unlock_attempt',
