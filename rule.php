@@ -24,7 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/mod/quiz/locallib.php'); // For quiz_attempt.
+if (file_exists($CFG->dirroot . '/mod/quiz/locallib.php')) {
+    require_once($CFG->dirroot . '/mod/quiz/locallib.php'); // For quiz_attempt.
+} else if (file_exists($CFG->dirroot . '/mod/quiz/classes/quiz_attempt.php')) {
+    require_once($CFG->dirroot . '/mod/quiz/classes/quiz_attempt.php'); // For quiz_attempt.
+}
 
 use mod_quiz\local\access_rule_base;
 use mod_quiz\quiz_settings;
