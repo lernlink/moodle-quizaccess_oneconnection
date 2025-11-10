@@ -272,18 +272,6 @@ if ($stringman->string_exists('statistics', 'quiz')) {
     ]))->out(false)] = get_string('statistics', 'quiz');
 }
 
-// Our page.
-$reportoptions[$PAGE->url->out(false)] = get_string('allowconnections', 'quizaccess_oneconnection');
-
-$urlselect = new url_select($reportoptions, $PAGE->url->out(false), null);
-if ($stringman->string_exists('reportindex', 'quiz')) {
-    $urlselect->set_label(get_string('reportindex', 'quiz'), ['class' => 'visually-hidden']);
-}
-
-echo html_writer::start_div('container-fluid tertiary-navigation');
-echo html_writer::div($OUTPUT->render($urlselect), 'navitem');
-echo html_writer::end_div();
-
 // Filter form.
 $mform->display();
 
