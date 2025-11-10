@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<XMLDB PATH="mod/quiz/accessrule/onesession/db"
+<XMLDB PATH="mod/quiz/accessrule/oneconnection/db"
   VERSION="2025092600"
-  COMMENT="XMLDB file for Moodle mod/quiz/accessrule/onesession"
+  COMMENT="XMLDB file for Moodle mod/quiz/accessrule/oneconnection"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd">
 
   <TABLES>
 
     <!-- Main per-quiz setting (enabled / disabled). -->
-    <TABLE NAME="quizaccess_onesession" COMMENT="quizaccess_onesession settings">
+    <TABLE NAME="quizaccess_oneconnection" COMMENT="quizaccess_oneconnection settings">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
         <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
@@ -21,7 +21,7 @@
     </TABLE>
 
     <!-- Per-attempt session binding (the actual device/session lock). -->
-    <TABLE NAME="quizaccess_onesession_sess" COMMENT="quizaccess_onesession session hashes">
+    <TABLE NAME="quizaccess_oneconnection_sess" COMMENT="quizaccess_oneconnection session hashes">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
         <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
@@ -37,7 +37,7 @@
     </TABLE>
 
     <!-- Audit of manual unlocks done from allowconnections.php -->
-    <TABLE NAME="quizaccess_onesession_log"
+    <TABLE NAME="quizaccess_oneconnection_log"
       COMMENT="Logs of connection-change (unlock) actions for quiz attempts">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />

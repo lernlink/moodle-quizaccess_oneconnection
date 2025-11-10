@@ -18,13 +18,13 @@
  * Event triggered when a student is blocked from continuing an attempt
  * because it was started in another session.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    event
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace quizaccess_onesession\event;
+namespace quizaccess_oneconnection\event;
 
 use coding_exception;
 use core\event\base;
@@ -55,7 +55,7 @@ class attempt_blocked extends base
      */
     public static function get_name(): string
     {
-        return get_string('eventattemptblocked', 'quizaccess_onesession');
+        return get_string('eventattemptblocked', 'quizaccess_oneconnection');
     }
 
     /**

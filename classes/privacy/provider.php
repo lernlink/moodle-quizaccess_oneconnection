@@ -15,17 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy provider for the onesession quiz access rule.
+ * Privacy provider for the oneconnection quiz access rule.
  *
  * This plugin stores only audit information about which teacher/invigilator
  * allowed a connection change for which quiz attempt.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    privacy
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace quizaccess_onesession\privacy;
+namespace quizaccess_oneconnection\privacy;
 
 use core_privacy\local\metadata\collection;
 use core_privacy\local\metadata\provider as metadata_provider;
@@ -51,7 +51,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     public static function get_metadata(collection $collection): collection
     {
         $collection->add_database_table(
-            'quizaccess_onesession_log',
+            'quizaccess_oneconnection_log',
             [
                 'unlockedby' => 'privacy:metadata:log:unlockedby',
             ],
@@ -79,7 +79,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                   JOIN {course_modules} cm ON cm.id = ctx.instanceid
                   JOIN {modules} m ON m.id = cm.module AND m.name = :modname
                   JOIN {quiz} q ON q.id = cm.instance
-                  JOIN {quizaccess_onesession_log} qol ON qol.quizid = q.id
+                  JOIN {quizaccess_oneconnection_log} qol ON qol.quizid = q.id
                  WHERE ctx.contextlevel = :contextlevel
                    AND qol.unlockedby = :userid";
 
@@ -125,7 +125,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         }
 
         $quizid = $cm->instance;
-        $DB->delete_records('quizaccess_onesession_log', ['quizid' => $quizid]);
+        $DB->delete_records('quizaccess_oneconnection_log', ['quizid' => $quizid]);
     }
 
     /**
@@ -151,7 +151,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             }
 
             $quizid = $cm->instance;
-            $DB->delete_records('quizaccess_onesession_log', [
+            $DB->delete_records('quizaccess_oneconnection_log', [
                 'quizid' => $quizid,
                 'unlockedby' => $userid,
             ]);
@@ -181,7 +181,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         $quizid = $cm->instance;
 
         $sql = "SELECT DISTINCT unlockedby
-                  FROM {quizaccess_onesession_log}
+                  FROM {quizaccess_oneconnection_log}
                  WHERE quizid = :quizid";
         $params = ['quizid' => $quizid];
 
@@ -215,7 +215,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         $params = ['quizid' => $quizid] + $inparams;
 
         $DB->delete_records_select(
-            'quizaccess_onesession_log',
+            'quizaccess_oneconnection_log',
             "quizid = :quizid AND unlockedby $insql",
             $params
         );

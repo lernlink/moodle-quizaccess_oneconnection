@@ -15,15 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers for the onesession rule.
+ * Event observers for the oneconnection rule.
  *
- * @package    quizaccess_onesession
+ * @package    quizaccess_oneconnection
  * @category    event
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace quizaccess_onesession;
+namespace quizaccess_oneconnection;
 
 use core\event\base;
 
@@ -49,7 +49,7 @@ class observers
 
         $attemptid = $event->objectid;
         if (!empty($attemptid)) {
-            $DB->delete_records('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
+            $DB->delete_records('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
         }
     }
 }

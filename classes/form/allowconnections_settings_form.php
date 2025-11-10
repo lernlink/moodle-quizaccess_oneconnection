@@ -17,12 +17,12 @@
 /**
  * Filter / settings form for the allowconnections page.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    form
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace quizaccess_onesession\form;
+namespace quizaccess_oneconnection\form;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -61,16 +61,16 @@ class allowconnections_settings_form extends \moodleform
         $mform->setType('id', PARAM_INT);
 
         // Section 1 – what to include.
-        $mform->addElement('header', 'preferencespage', get_string('whattoincludeinreport', 'quizaccess_onesession'));
+        $mform->addElement('header', 'preferencespage', get_string('whattoincludeinreport', 'quizaccess_oneconnection'));
         $mform->setExpanded('preferencespage', true);
 
         $attemptsopts = [
-            'enrolledattempts' => get_string('attemptsfrom_enrolledattempts', 'quizaccess_onesession'),
-            'enrollednoattempts' => get_string('attemptsfrom_enrollednoattempts', 'quizaccess_onesession'),
-            'enrolledall' => get_string('attemptsfrom_enrolledall', 'quizaccess_onesession'),
-            'allattempts' => get_string('attemptsfrom_allattempts', 'quizaccess_onesession'),
+            'enrolledattempts' => get_string('attemptsfrom_enrolledattempts', 'quizaccess_oneconnection'),
+            'enrollednoattempts' => get_string('attemptsfrom_enrollednoattempts', 'quizaccess_oneconnection'),
+            'enrolledall' => get_string('attemptsfrom_enrolledall', 'quizaccess_oneconnection'),
+            'allattempts' => get_string('attemptsfrom_allattempts', 'quizaccess_oneconnection'),
         ];
-        $mform->addElement('select', 'attemptsfrom', get_string('attemptsfrom', 'quizaccess_onesession'), $attemptsopts);
+        $mform->addElement('select', 'attemptsfrom', get_string('attemptsfrom', 'quizaccess_oneconnection'), $attemptsopts);
         $mform->setDefault('attemptsfrom', $attemptsfrom);
 
         // Attempt state group.
@@ -88,7 +88,7 @@ class allowconnections_settings_form extends \moodleform
                 'advcheckbox',
                 "attemptstate[$key]",
                 '',
-                get_string($stringid, 'quizaccess_onesession'),
+                get_string($stringid, 'quizaccess_oneconnection'),
                 ['group' => 1],
                 [0, 1]
             );
@@ -98,20 +98,20 @@ class allowconnections_settings_form extends \moodleform
         $mform->addGroup(
             $stategroup,
             'stateoptions',
-            get_string('attemptsthat', 'quizaccess_onesession'),
+            get_string('attemptsthat', 'quizaccess_oneconnection'),
             [' '],
             false
         );
 
         // Section 2 – display options.
-        $mform->addElement('header', 'preferencesuser', get_string('displayoptions', 'quizaccess_onesession'));
+        $mform->addElement('header', 'preferencesuser', get_string('displayoptions', 'quizaccess_oneconnection'));
         $mform->setExpanded('preferencesuser', true);
 
-        $mform->addElement('text', 'pagesize', get_string('pagesize', 'quizaccess_onesession'));
+        $mform->addElement('text', 'pagesize', get_string('pagesize', 'quizaccess_oneconnection'));
         $mform->setType('pagesize', PARAM_INT);
         $mform->setDefault('pagesize', $pagesize);
 
         // Button.
-        $this->add_action_buttons(false, get_string('showreport', 'quizaccess_onesession'));
+        $this->add_action_buttons(false, get_string('showreport', 'quizaccess_oneconnection'));
     }
 }

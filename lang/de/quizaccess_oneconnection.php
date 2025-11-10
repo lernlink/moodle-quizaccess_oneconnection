@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * German language strings for quizaccess_onesession.
+ * German language strings for quizaccess_oneconnection.
  *
- * @package    quizaccess_onesession
+ * @package    quizaccess_oneconnection
  * @copyright  2016 Vadim Dvorovenko
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -45,10 +45,10 @@ $string['filterattemptsthat'] = 'Versuche mit Status';
 $string['filterenrolledwithattempts'] = 'Eingeschriebene Nutzer/innen mit Testversuch';
 $string['filterheading'] = 'Was soll im Bericht enthalten sein';
 $string['notpossible'] = 'Nicht möglich';
-$string['onesession'] = 'Gleichzeitige Verbindungen blockieren';
-$string['onesession:allowchange'] = 'Einen Verbindungswechsel für einen Testversuch erlauben';
-$string['onesession:editenabled'] = 'Steuern, ob „Gleichzeitige Verbindungen blockieren“ gesetzt werden kann';
-$string['onesession_help'] = 'Wenn aktiviert, können Nutzer/innen einen Testversuch nur in derselben Browser-Sitzung fortsetzen. Jeder Versuch, denselben Testversuch mit einem anderen Computer, Gerät oder Browser zu öffnen, wird blockiert.';
+$string['oneconnection'] = 'Gleichzeitige Verbindungen blockieren';
+$string['oneconnection:allowchange'] = 'Einen Verbindungswechsel für einen Testversuch erlauben';
+$string['oneconnection:editenabled'] = 'Steuern, ob „Gleichzeitige Verbindungen blockieren“ gesetzt werden kann';
+$string['oneconnection_help'] = 'Wenn aktiviert, können Nutzer/innen einen Testversuch nur in derselben Browser-Sitzung fortsetzen. Jeder Versuch, denselben Testversuch mit einem anderen Computer, Gerät oder Browser zu öffnen, wird blockiert.';
 $string['pagesize'] = 'Seitengröße';
 $string['pluginname'] = 'Testzugriffsregel: Gleichzeitige Sitzungen blockieren';
 $string['privacy:metadata'] = 'Das Plugin speichert den Hash eines Strings zur Identifizierung der Client-Gerätesitzung. Es protokolliert außerdem, wenn eine Lehrperson einen Verbindungswechsel für den Versuch eines Studierenden erlaubt.';

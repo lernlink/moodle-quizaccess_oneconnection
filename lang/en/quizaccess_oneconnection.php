@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language strings for quizaccess_onesession.
+ * English language strings for quizaccess_oneconnection.
  *
- * @package    quizaccess_onesession
+ * @package    quizaccess_oneconnection
  * @copyright  2016 Vadim Dvorovenko
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -45,10 +45,10 @@ $string['filterattemptsthat'] = 'Attempts that are';
 $string['filterenrolledwithattempts'] = 'Enrolled users who have a quiz attempt';
 $string['filterheading'] = 'What to include in the report';
 $string['notpossible'] = 'Not possible';
-$string['onesession'] = 'Block concurrent connections';
-$string['onesession:allowchange'] = 'Allow a change in connection for a quiz attempt';
-$string['onesession:editenabled'] = 'Control whether "Block concurrent connections" can be set';
-$string['onesession_help'] = 'If enabled, users can continue a quiz attempt only in the same browser session. Any attempts to open the same quiz attempt using another computer, device or browser will be blocked. This may be useful to be sure that no one helps a student by opening the same quiz attempt on other computer.';
+$string['oneconnection'] = 'Block concurrent connections';
+$string['oneconnection:allowchange'] = 'Allow a change in connection for a quiz attempt';
+$string['oneconnection:editenabled'] = 'Control whether "Block concurrent connections" can be set';
+$string['oneconnection_help'] = 'If enabled, users can continue a quiz attempt only in the same browser session. Any attempts to open the same quiz attempt using another computer, device or browser will be blocked. This may be useful to be sure that no one helps a student by opening the same quiz attempt on other computer.';
 $string['pagesize'] = 'Page size';
 $string['pluginname'] = 'Block concurrent sessions quiz access rule';
 $string['privacy:metadata'] = 'The plugin stores the hash of the string used to identify the client device session. Although the original string contains the client\'s IP address and the User-Agent header sent by the client\'s browser, the hash does not allow to extract this information. The hash is automatically deleted immediately after the end of the quiz session. It also logs when a teacher allows a connection change for a student attempt.';

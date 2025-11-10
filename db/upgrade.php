@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade logic for the quizaccess_onesession plugin.
+ * Upgrade logic for the quizaccess_oneconnection plugin.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    upgrade
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,28 +25,28 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Upgrade routine for quizaccess_onesession.
+ * Upgrade routine for quizaccess_oneconnection.
  *
  * @param int $oldversion The version of the plugin that is currently installed.
  * @return bool Always true.
  */
-function xmldb_quizaccess_onesession_upgrade($oldversion)
+function xmldb_quizaccess_oneconnection_upgrade($oldversion)
 {
     global $DB;
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2024010802) {
-        $DB->delete_records('quizaccess_onesession_sess');
+        $DB->delete_records('quizaccess_oneconnection_sess');
 
-        $table = new xmldb_table('quizaccess_onesession_sess');
+        $table = new xmldb_table('quizaccess_oneconnection_sess');
         $field = new xmldb_field('sessionhash', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'attemptid');
         $dbman->change_field_precision($table, $field);
 
-        upgrade_plugin_savepoint(true, 2024010802, 'quizaccess', 'onesession');
+        upgrade_plugin_savepoint(true, 2024010802, 'quizaccess', 'oneconnection');
     }
 
     if ($oldversion < 2025092600) {
-        $table = new xmldb_table('quizaccess_onesession_log');
+        $table = new xmldb_table('quizaccess_oneconnection_log');
 
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
@@ -63,29 +63,29 @@ function xmldb_quizaccess_onesession_upgrade($oldversion)
             $dbman->create_table($table);
         }
 
-        if ($DB->record_exists('capabilities', ['name' => 'quizaccess/onesession:unlockattempt'])) {
-            $DB->set_field('capabilities', 'name', 'quizaccess/onesession:allowchange', ['name' => 'quizaccess/onesession:unlockattempt']);
+        if ($DB->record_exists('capabilities', ['name' => 'quizaccess/oneconnection:unlockattempt'])) {
+            $DB->set_field('capabilities', 'name', 'quizaccess/oneconnection:allowchange', ['name' => 'quizaccess/oneconnection:unlockattempt']);
         }
 
-        upgrade_plugin_savepoint(true, 2025092600, 'quizaccess', 'onesession');
+        upgrade_plugin_savepoint(true, 2025092600, 'quizaccess', 'oneconnection');
     }
 
     if ($oldversion < 2025092607) {
-        $table = new xmldb_table('quizaccess_onesession_sess');
+        $table = new xmldb_table('quizaccess_oneconnection_sess');
         $field = new xmldb_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'id');
 
         if ($dbman->table_exists($table) && !$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        upgrade_plugin_savepoint(true, 2025092607, 'quizaccess', 'onesession');
+        upgrade_plugin_savepoint(true, 2025092607, 'quizaccess', 'oneconnection');
     }
 
     if ($oldversion < 2025092608) {
         // Safety net: create all 3 tables if missing.
 
-        // 1) quizaccess_onesession
-        $table = new xmldb_table('quizaccess_onesession');
+        // 1) quizaccess_oneconnection
+        $table = new xmldb_table('quizaccess_oneconnection');
         if (!$dbman->table_exists($table)) {
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
             $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
@@ -97,8 +97,8 @@ function xmldb_quizaccess_onesession_upgrade($oldversion)
             $dbman->create_table($table);
         }
 
-        // 2) quizaccess_onesession_sess
-        $table = new xmldb_table('quizaccess_onesession_sess');
+        // 2) quizaccess_oneconnection_sess
+        $table = new xmldb_table('quizaccess_oneconnection_sess');
         if (!$dbman->table_exists($table)) {
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
             $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
@@ -112,8 +112,8 @@ function xmldb_quizaccess_onesession_upgrade($oldversion)
             $dbman->create_table($table);
         }
 
-        // 3) quizaccess_onesession_log
-        $table = new xmldb_table('quizaccess_onesession_log');
+        // 3) quizaccess_oneconnection_log
+        $table = new xmldb_table('quizaccess_oneconnection_log');
         if (!$dbman->table_exists($table)) {
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
             $table->add_field('quizid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
@@ -129,18 +129,18 @@ function xmldb_quizaccess_onesession_upgrade($oldversion)
             $dbman->create_table($table);
         }
 
-        upgrade_plugin_savepoint(true, 2025092608, 'quizaccess', 'onesession');
+        upgrade_plugin_savepoint(true, 2025092608, 'quizaccess', 'oneconnection');
     }
 
     // NEW STEP: add index on (attemptid, timeunlocked) for the report.
     if ($oldversion < 2025092609) {
-        $table = new xmldb_table('quizaccess_onesession_log');
+        $table = new xmldb_table('quizaccess_oneconnection_log');
         $index = new xmldb_index('attempt_time_idx', XMLDB_INDEX_NOTUNIQUE, ['attemptid', 'timeunlocked']);
         if ($dbman->table_exists($table) && !$dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        upgrade_plugin_savepoint(true, 2025092609, 'quizaccess', 'onesession');
+        upgrade_plugin_savepoint(true, 2025092609, 'quizaccess', 'oneconnection');
     }
 
     return true;

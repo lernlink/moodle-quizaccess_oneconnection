@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers mapping for quizaccess_onesession.
+ * Event observers mapping for quizaccess_oneconnection.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    event
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -29,7 +29,7 @@ $observers = [
     // When an attempt is abandoned, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_abandoned',
-        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_oneconnection\observers::unlock_attempt',
     ],
 
     // We intentionally do NOT unlock on attempt_becameoverdue anymore.
@@ -37,13 +37,13 @@ $observers = [
     // When an attempt is deleted, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_deleted',
-        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_oneconnection\observers::unlock_attempt',
     ],
 
     // When an attempt is submitted, release the session binding.
     [
         'eventname' => '\mod_quiz\event\attempt_submitted',
-        'callback' => '\quizaccess_onesession\observers::unlock_attempt',
+        'callback' => '\quizaccess_oneconnection\observers::unlock_attempt',
     ],
 
 ];

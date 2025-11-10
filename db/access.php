@@ -17,7 +17,7 @@
 /**
  * Capabilities for the "Block concurrent sessions" quiz access rule.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    access
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
     // Allow a teacher/examiner to unlock an attempt so the student can continue from another device.
-    'quizaccess/onesession:allowchange' => [
+    'quizaccess/oneconnection:allowchange' => [
         'riskbitmask' => RISK_PERSONAL,
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
@@ -40,7 +40,7 @@ $capabilities = [
     ],
 
     // Allow a teacher to enable/disable the rule on a per-quiz basis.
-    'quizaccess/onesession:editenabled' => [
+    'quizaccess/oneconnection:editenabled' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,

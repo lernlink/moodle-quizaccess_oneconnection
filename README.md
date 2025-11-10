@@ -1,6 +1,6 @@
 # Block Concurrent Sessions Quiz Access Rule
 
-[![Moodle Plugin CI](https://github.com/vadimonus/moodle-quizaccess_onesession/workflows/Moodle%20Plugin%20CI/badge.svg?branch=master)](https://github.com/vadimonus/moodle-quizaccess_onesession/actions?query=workflow%3A%22Moodle+Plugin+CI%22+branch%3Amaster)
+[![Moodle Plugin CI](https://github.com/vadimonus/moodle-quizaccess_oneconnection/workflows/Moodle%20Plugin%20CI/badge.svg?branch=master)](https://github.com/vadimonus/moodle-quizaccess_oneconnection/actions?query=workflow%3A%22Moodle+Plugin+CI%22+branch%3Amaster)
 
 ## Requirements
 
@@ -8,7 +8,7 @@
 
 ## Installation
 
-1.  Copy the `onesession` folder into your Moodle's `mod/quiz/accessrule/` directory.
+1.  Copy the `oneconnection` folder into your Moodle's `mod/quiz/accessrule/` directory.
 2.  Log in to your Moodle site as an administrator and visit the **Site administration > Notifications** page to complete the installation.
 
 ## Usage
@@ -49,8 +49,8 @@ New features including bulk actions, persistent audit logging, and role-based pe
 
 ## Links
 
-*   **Plugin Page:** https://moodle.org/plugins/view.php?plugin=quizaccess_onesession
-*   **Latest Code:** https://github.com/vadimonus/moodle-quizaccess_onesession
+*   **Plugin Page:** https://moodle.org/plugins/view.php?plugin=quizaccess_oneconnection
+*   **Latest Code:** https://github.com/vadimonus/moodle-quizaccess_oneconnection
 
 ## Changes
 
@@ -58,7 +58,7 @@ New features including bulk actions, persistent audit logging, and role-based pe
 *   **MAJOR:** Added a "Allow connection changes" management page for teachers.
 *   **MAJOR:** Teachers can now unlock multiple students in a single bulk action.
 *   **MAJOR:** All unlock actions are now permanently logged for a clear audit trail.
-*   **FEATURE:** Added a new capability `quizaccess/onesession:editenabled` to restrict who can change the "Block concurrent connections" setting.
+*   **FEATURE:** Added a new capability `quizaccess/oneconnection:editenabled` to restrict who can change the "Block concurrent connections" setting.
 *   **FEATURE:** Added German and Russian language translations.
 *   **IMPROVEMENT:** Moved the link to the "Results" tab dropdown for better usability.
 *   **FIX:** Updated the Privacy API and Backup/Restore API for Moodle 5.0 compatibility.

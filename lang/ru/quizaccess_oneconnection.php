@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Russian language strings for quizaccess_onesession.
+ * Russian language strings for quizaccess_oneconnection.
  *
- * @package    quizaccess_onesession
+ * @package    quizaccess_oneconnection
  * @copyright  2016 Vadim Dvorovenko
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -45,10 +45,10 @@ $string['filterattemptsthat'] = 'Попытки со статусом';
 $string['filterenrolledwithattempts'] = 'Зачисленные пользователи, у которых есть попытка теста';
 $string['filterheading'] = 'Что включить в отчёт';
 $string['notpossible'] = 'Невозможно';
-$string['onesession'] = 'Блокировать одновременные подключения';
-$string['onesession:allowchange'] = 'Разрешить смену подключения для попытки теста';
-$string['onesession:editenabled'] = 'Управлять возможностью установки «Блокировать одновременные подключения»';
-$string['onesession_help'] = 'Если включено, пользователи могут продолжать попытку теста только в том же сеансе браузера. Любые попытки открыть ту же самую попытку теста с другого компьютера, устройства или браузера будут заблокированы.';
+$string['oneconnection'] = 'Блокировать одновременные подключения';
+$string['oneconnection:allowchange'] = 'Разрешить смену подключения для попытки теста';
+$string['oneconnection:editenabled'] = 'Управлять возможностью установки «Блокировать одновременные подключения»';
+$string['oneconnection_help'] = 'Если включено, пользователи могут продолжать попытку теста только в том же сеансе браузера. Любые попытки открыть ту же самую попытку теста с другого компьютера, устройства или браузера будут заблокированы.';
 $string['pagesize'] = 'Размер страницы';
 $string['pluginname'] = 'Правило доступа к тесту: блокировка одновременных подключений';
 $string['privacy:metadata'] = 'Плагин сохраняет хеш строки для идентификации сессии клиентского устройства. Он также регистрирует, когда преподаватель разрешает смену подключения для попытки студента.';

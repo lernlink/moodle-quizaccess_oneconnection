@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the quiz access rule 'onesession'.
+ * Version details for the quiz access rule 'oneconnection'.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    upgrade
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -25,7 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'quizaccess_onesession';
+$plugin->component = 'quizaccess_oneconnection';
 $plugin->version = 2025111000; // Plugin version (date-based).
 $plugin->release = '5.0.0';
 $plugin->maturity = MATURITY_STABLE;

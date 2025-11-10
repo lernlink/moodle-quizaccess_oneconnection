@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Backup handler for the onesession quiz access plugin.
+ * Backup handler for the oneconnection quiz access plugin.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    backup
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -28,12 +28,12 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/mod/quiz/backup/moodle2/backup_mod_quiz_access_subplugin.class.php');
 
 /**
- * Provides the information to backup the onesession quiz access plugin.
+ * Provides the information to backup the oneconnection quiz access plugin.
  *
- * If this plugin is required, a <quizaccess_onesession> tag will be added to the
+ * If this plugin is required, a <quizaccess_oneconnection> tag will be added to the
  * XML in the appropriate place.
  */
-class backup_quizaccess_onesession_subplugin extends backup_mod_quiz_access_subplugin
+class backup_quizaccess_oneconnection_subplugin extends backup_mod_quiz_access_subplugin
 {
 
     /**
@@ -48,9 +48,9 @@ class backup_quizaccess_onesession_subplugin extends backup_mod_quiz_access_subp
         $subplugin->add_child($wrapper);
 
         // Backup the main setting table.
-        $settings = new backup_nested_element('quizaccess_onesession', null, ['enabled']);
+        $settings = new backup_nested_element('quizaccess_oneconnection', null, ['enabled']);
         $wrapper->add_child($settings);
-        $settings->set_source_table('quizaccess_onesession', ['quizid' => backup::VAR_ACTIVITYID]);
+        $settings->set_source_table('quizaccess_oneconnection', ['quizid' => backup::VAR_ACTIVITYID]);
 
         // Backup the log table (manual unlocks).
         $logs = new backup_nested_element('logs');
@@ -58,7 +58,7 @@ class backup_quizaccess_onesession_subplugin extends backup_mod_quiz_access_subp
 
         $log = new backup_nested_element('log', ['id'], ['attemptid', 'unlockedby', 'timeunlocked']);
         $logs->add_child($log);
-        $log->set_source_table('quizaccess_onesession_log', ['quizid' => backup::VAR_ACTIVITYID]);
+        $log->set_source_table('quizaccess_oneconnection_log', ['quizid' => backup::VAR_ACTIVITYID]);
 
         // Ensure user and attempt IDs can be restored correctly.
         $log->annotate_ids('quiz_attempt', 'attemptid');

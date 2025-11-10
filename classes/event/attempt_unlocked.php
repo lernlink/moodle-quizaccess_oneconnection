@@ -18,12 +18,12 @@
  * Event triggered when a teacher/invigilator allows a connection change
  * for a student's quiz attempt.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @copyright   2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace quizaccess_onesession\event;
+namespace quizaccess_oneconnection\event;
 
 use coding_exception;
 use core\event\base;
@@ -54,7 +54,7 @@ class attempt_unlocked extends base
      */
     public static function get_name(): string
     {
-        return get_string('eventattemptunlocked', 'quizaccess_onesession');
+        return get_string('eventattemptunlocked', 'quizaccess_oneconnection');
     }
 
     /**

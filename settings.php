@@ -17,7 +17,7 @@
 /**
  * Admin settings for the "Block concurrent sessions" quiz access rule.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @category    admin
  * @copyright  2016 Vadim Dvorovenko <Vadimon@mail.ru>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -30,17 +30,17 @@ if ($ADMIN->fulltree) {
     // General section.
     $settings->add(
         new admin_setting_heading(
-            'quizaccess_onesession/heading',
+            'quizaccess_oneconnection/heading',
             get_string('generalsettings', 'admin'),
-            get_string('settingsintro', 'quizaccess_onesession')
+            get_string('settingsintro', 'quizaccess_oneconnection')
         )
     );
 
     // Whether the rule should be pre-enabled for new quizzes.
     $settings->add(
         new admin_setting_configcheckbox(
-            'quizaccess_onesession/defaultenabled',
-            get_string('onesession', 'quizaccess_onesession'),
+            'quizaccess_oneconnection/defaultenabled',
+            get_string('oneconnection', 'quizaccess_oneconnection'),
             '',
             0
         )
@@ -49,7 +49,7 @@ if ($ADMIN->fulltree) {
     // Advanced section.
     $settings->add(
         new admin_setting_heading(
-            'quizaccess_onesession/headingadvanced',
+            'quizaccess_oneconnection/headingadvanced',
             get_string('advancedsettings', 'moodle'),
             ''
         )
@@ -58,9 +58,9 @@ if ($ADMIN->fulltree) {
     // List of subnets that should not be used when calculating the session fingerprint.
     $settings->add(
         new admin_setting_configtextarea(
-            'quizaccess_onesession/whitelist',
-            get_string('whitelist', 'quizaccess_onesession'),
-            get_string('whitelist_desc', 'quizaccess_onesession'),
+            'quizaccess_oneconnection/whitelist',
+            get_string('whitelist', 'quizaccess_oneconnection'),
+            get_string('whitelist_desc', 'quizaccess_oneconnection'),
             '',
             PARAM_RAW,
             60,
