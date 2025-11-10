@@ -43,9 +43,9 @@ $pagesize = optional_param('pagesize', 30, PARAM_INT);
 $firstnameinitial = optional_param('tifirst', '', PARAM_ALPHA);
 $lastnameinitial = optional_param('tilast', '', PARAM_ALPHA);
 
-// Sorting (table will override, but we keep these in URL).
-$sort = optional_param('tsort', 'fullname', PARAM_ALPHA);
-$dir = optional_param('tdir', 'ASC', PARAM_ALPHA);
+// Sorting (preserve and honour flexible_table 'sort' & 'dir' params).
+$sort = optional_param('sort', 'firstname', PARAM_ALPHA); // 'firstname' default.
+$dir = optional_param('dir', 'ASC', PARAM_ALPHA);
 
 // Attempt state checkboxes. If none are present in the URL we use the default (all on).
 $attemptstate = optional_param_array('attemptstate', null, PARAM_BOOL);
@@ -120,8 +120,8 @@ if ($action === 'unlock' && confirm_sesskey()) {
         'pagesize' => $pagesize,
         'tifirst' => $firstnameinitial,
         'tilast' => $lastnameinitial,
-        'tsort' => $sort,
-        'tdir' => $dir,
+        'sort' => $sort,
+        'dir' => $dir,
     ]);
     foreach (($attemptstate ?? []) as $k => $v) {
         if ($v) {
@@ -149,8 +149,8 @@ if ($data = $mform->get_data()) {
         'id' => $cm->id,
         'attemptsfrom' => $data->attemptsfrom,
         'pagesize' => $data->pagesize,
-        'tsort' => $sort,
-        'tdir' => $dir,
+        'sort' => $sort,
+        'dir' => $dir,
     ];
     if (!empty($data->attemptstate) && is_array($data->attemptstate)) {
         foreach ($data->attemptstate as $k => $v) {
@@ -215,8 +215,8 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
         'pagesize' => $pagesize,
         'tifirst' => $firstnameinitial,
         'tilast' => $lastnameinitial,
-        'tsort' => $sort,
-        'tdir' => $dir,
+        'sort' => $sort,
+        'dir' => $dir,
     ]);
     foreach ($normalizedattemptstate as $k => $v) {
         if ($v) {
@@ -233,8 +233,8 @@ $baseurl = new moodle_url($PAGE->url, [
     'pagesize' => $pagesize,
     'tifirst' => $firstnameinitial,
     'tilast' => $lastnameinitial,
-    'tsort' => $sort,
-    'tdir' => $dir,
+    'sort' => $sort,
+    'dir' => $dir,
 ]);
 foreach ($normalizedattemptstate as $k => $v) {
     if ($v) {
@@ -278,27 +278,45 @@ $mform->display();
 // Custom initials bars (because core initials_bar() needs a baseurl).
 $letters = range('A', 'Z');
 
+// Firstname initials bar.
 echo html_writer::start_div('initialsbar');
 echo html_writer::tag('strong', get_string('firstname') . ' ');
 $allurl = clone $baseurl;
 $allurl->param('tifirst', '');
-echo html_writer::link($allurl, get_string('all'));
+if ($firstnameinitial === '') {
+    echo html_writer::tag('strong', get_string('all'));
+} else {
+    echo html_writer::link($allurl, get_string('all'));
+}
 foreach ($letters as $letter) {
     $letterurl = clone $baseurl;
     $letterurl->param('tifirst', $letter);
-    echo ' ' . html_writer::link($letterurl, $letter);
+    if ($firstnameinitial === $letter) {
+        echo ' ' . html_writer::tag('strong', $letter);
+    } else {
+        echo ' ' . html_writer::link($letterurl, $letter);
+    }
 }
 echo html_writer::end_div();
 
+// Lastname initials bar.
 echo html_writer::start_div('initialsbar');
 echo html_writer::tag('strong', get_string('lastname') . ' ');
 $allurl = clone $baseurl;
 $allurl->param('tilast', '');
-echo html_writer::link($allurl, get_string('all'));
+if ($lastnameinitial === '') {
+    echo html_writer::tag('strong', get_string('all'));
+} else {
+    echo html_writer::link($allurl, get_string('all'));
+}
 foreach ($letters as $letter) {
     $letterurl = clone $baseurl;
     $letterurl->param('tilast', $letter);
-    echo ' ' . html_writer::link($letterurl, $letter);
+    if ($lastnameinitial === $letter) {
+        echo ' ' . html_writer::tag('strong', $letter);
+    } else {
+        echo ' ' . html_writer::link($letterurl, $letter);
+    }
 }
 echo html_writer::end_div();
 
@@ -440,7 +458,8 @@ $table = new flexible_table('quizaccess-oneconnection-allowconnections-' . $cm->
 $table->define_baseurl($baseurl);
 $table->define_columns([
     'select',
-    'fullname',
+    'firstname',
+    'lastname',
     'email',
     'status',
     'changeinconnection',
@@ -448,13 +467,14 @@ $table->define_columns([
 ]);
 $table->define_headers([
     '',
-    get_string('fullnameuser'),
+    get_string('firstname'),
+    get_string('lastname'),
     get_string('email'),
     get_string('statusattempt', 'quizaccess_oneconnection'),
     get_string('changeinconnection', 'quizaccess_oneconnection'),
     get_string('changeallowed', 'quizaccess_oneconnection'),
 ]);
-$table->sortable(true, 'fullname', SORT_ASC);
+$table->sortable(true, 'firstname', SORT_ASC);
 $table->no_sorting('select');
 $table->set_attribute('class', 'flexible table table-striped table-hover generaltable quizaccess-oneconnection-table');
 
@@ -484,7 +504,13 @@ foreach ($sortcolumns as $column => $sortdirection) {
     }
 
     switch ($column) {
-        case 'fullname':
+        case 'firstname':
+            $orderby[] = "u.firstname $sortdirection, u.lastname $sortdirection";
+            break;
+        case 'lastname':
+            $orderby[] = "u.lastname $sortdirection, u.firstname $sortdirection";
+            break;
+        case 'fullname': // Backwards compatibility if some links still pass 'fullname'.
             $orderby[] = "u.firstname $sortdirection, u.lastname $sortdirection";
             break;
         case 'email':
@@ -499,9 +525,9 @@ foreach ($sortcolumns as $column => $sortdirection) {
             // Sort by possibility first.
             $orderby[] = "CASE
                 WHEN qa.id IS NOT NULL AND (qa.state = 'inprogress' OR qa.state = 'overdue') THEN 0
-WHEN qa.id IS NOT NULL THEN 1
-ELSE 2
-END $sortdirection";
+                WHEN qa.id IS NOT NULL THEN 1
+                ELSE 2
+            END $sortdirection";
             $orderby[] = "u.firstname ASC, u.lastname ASC";
             break;
         case 'changeallowed':
@@ -618,13 +644,15 @@ foreach ($records as $r) {
         $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
     }
 
-    // User profile link.
+    // User profile link (link first name; show last name separately).
     $profileurl = new moodle_url('/user/view.php', ['id' => $r->userid, 'course' => $course->id]);
-    $fullname = html_writer::link($profileurl, fullname($r));
+    $firstnamecell = html_writer::link($profileurl, s($r->firstname));
+    $lastnamecell = s($r->lastname);
 
     $table->add_data([
         $selectbox,
-        $fullname,
+        $firstnamecell,
+        $lastnamecell,
         s($r->email),
         $statetext,
         $changeinconnection,
