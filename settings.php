@@ -62,8 +62,9 @@ if ($ADMIN->fulltree) {
             get_string('whitelist', 'quizaccess_onesession'),
             get_string('whitelist_desc', 'quizaccess_onesession'),
             '',
-            5,
-            60
+            PARAM_RAW,
+            60,
+            5
         )
     );
 }

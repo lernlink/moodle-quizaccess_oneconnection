@@ -360,16 +360,21 @@ class quizaccess_onesession extends access_rule_base
      */
     public static function add_settings_form_fields(mod_quiz_mod_form $quizform, MoodleQuickForm $mform)
     {
-        if (!has_capability('quizaccess/onesession:editenabled', $quizform->get_context())) {
-            return;
-        }
+        $context = $quizform->get_context();
+        $canedit = has_capability('quizaccess/onesession:editenabled', $context);
 
         $pluginconfig = get_config('quizaccess_onesession') ?: (object) [];
         $defaultenabled = isset($pluginconfig->defaultenabled) ? (int) $pluginconfig->defaultenabled : 0;
 
+        // Always show the option to teachers, but only allow changing it when permitted.
         $mform->addElement('checkbox', 'onesessionenabled', get_string('onesession', 'quizaccess_onesession'));
         $mform->setDefault('onesessionenabled', $defaultenabled);
         $mform->addHelpButton('onesessionenabled', 'onesession', 'quizaccess_onesession');
+
+        if (!$canedit) {
+            // Visible but read-only if the role doesn't have permission to change it.
+            $mform->freeze('onesessionenabled');
+        }
     }
 
     /**
