@@ -33,6 +33,7 @@ if (file_exists($CFG->dirroot . '/mod/quiz/locallib.php')) {
 use mod_quiz\local\access_rule_base;
 use mod_quiz\quiz_settings;
 use quizaccess_oneconnection\event\attempt_blocked;
+use mod_quiz\quiz_attempt;
 
 /**
  * Access rule that disallows continuing the same attempt from a different session/device.
