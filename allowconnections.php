@@ -23,7 +23,7 @@
  *  - allows unlocking a single attempt or multiple selected attempts;
  *  - logs every unlock action.
  *
- * @package     quizaccess_onesession
+ * @package     quizaccess_oneconnection
  * @copyright   2025
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -31,7 +31,7 @@
 require(__DIR__ . '/../../../../config.php');
 
 require_once($CFG->libdir . '/tablelib.php');
-require_once($CFG->dirroot . '/mod/quiz/accessrule/onesession/classes/form/allowconnections_settings_form.php');
+require_once($CFG->dirroot . '/mod/quiz/accessrule/oneconnection/classes/form/allowconnections_settings_form.php');
 
 use core_user;
 
@@ -67,12 +67,12 @@ $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 
 require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
-require_capability('quizaccess/onesession:allowchange', $context);
+require_capability('quizaccess/oneconnection:allowchange', $context);
 
 // We need the course context to detect roles that can preview (not students).
 $coursecontext = context_course::instance($course->id);
 
-$PAGE->set_url('/mod/quiz/accessrule/onesession/allowconnections.php', [
+$PAGE->set_url('/mod/quiz/accessrule/oneconnection/allowconnections.php', [
     'id' => $id,
 ]);
 $PAGE->set_title($quiz->name);
@@ -88,7 +88,7 @@ if ($action === 'unlock' && confirm_sesskey()) {
     $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid], 'id,userid,state', IGNORE_MISSING);
     if ($attempt && ($attempt->state === 'inprogress' || $attempt->state === 'overdue')) {
         // Delete session binding.
-        $DB->delete_records('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
+        $DB->delete_records('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
 
         // Log the action (if the table exists).
         $log = (object) [
@@ -98,13 +98,13 @@ if ($action === 'unlock' && confirm_sesskey()) {
             'timeunlocked' => time(),
         ];
         try {
-            $DB->insert_record('quizaccess_onesession_log', $log);
+            $DB->insert_record('quizaccess_oneconnection_log', $log);
         } catch (dml_exception $e) {
             // For older sites where the log table is not yet present, we simply continue.
         }
 
         // Fire the event so logstores receive the action.
-        $event = \quizaccess_onesession\event\attempt_unlocked::create([
+        $event = \quizaccess_oneconnection\event\attempt_unlocked::create([
             'objectid' => $attemptid,
             'relateduserid' => $attempt->userid ?? 0,
             'context' => $context,
@@ -138,7 +138,7 @@ $customdata = [
     'attemptstate' => $attemptstate,
     'pagesize' => $pagesize,
 ];
-$mform = new \quizaccess_onesession\form\allowconnections_settings_form(null, $customdata);
+$mform = new \quizaccess_oneconnection\form\allowconnections_settings_form(null, $customdata);
 
 // If the form is submitted, redirect to the same page with clean params (GET).
 if ($mform->is_cancelled()) {
@@ -183,7 +183,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
                 continue;
             }
 
-            $DB->delete_records('quizaccess_onesession_sess', ['attemptid' => $attemptid]);
+            $DB->delete_records('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
 
             $log = (object) [
                 'quizid' => $quiz->id,
@@ -192,13 +192,13 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
                 'timeunlocked' => time(),
             ];
             try {
-                $DB->insert_record('quizaccess_onesession_log', $log);
+                $DB->insert_record('quizaccess_oneconnection_log', $log);
             } catch (dml_exception $e) {
                 // Silently continue if the log table is not available.
             }
 
             // Fire event per attempt.
-            $event = \quizaccess_onesession\event\attempt_unlocked::create([
+            $event = \quizaccess_oneconnection\event\attempt_unlocked::create([
                 'objectid' => $attemptid,
                 'relateduserid' => $attempt->userid ?? 0,
                 'context' => $context,
@@ -273,7 +273,7 @@ if ($stringman->string_exists('statistics', 'quiz')) {
 }
 
 // Our page.
-$reportoptions[$PAGE->url->out(false)] = get_string('allowconnections', 'quizaccess_onesession');
+$reportoptions[$PAGE->url->out(false)] = get_string('allowconnections', 'quizaccess_oneconnection');
 
 $urlselect = new url_select($reportoptions, $PAGE->url->out(false), null);
 if ($stringman->string_exists('reportindex', 'quiz')) {
@@ -343,10 +343,10 @@ if (!empty($statelikes)) {
 $latestunlockjoin = "
     LEFT JOIN (
         SELECT ql1.*
-          FROM {quizaccess_onesession_log} ql1
+          FROM {quizaccess_oneconnection_log} ql1
           JOIN (
                 SELECT attemptid, MAX(timeunlocked) AS maxtime
-                  FROM {quizaccess_onesession_log}
+                  FROM {quizaccess_oneconnection_log}
                  GROUP BY attemptid
                ) ql2
             ON ql1.attemptid = ql2.attemptid AND ql1.timeunlocked = ql2.maxtime
@@ -447,7 +447,7 @@ $basefromsql = "FROM {user} u
                 $wheresql";
 
 // Prepare table.
-$table = new flexible_table('quizaccess-onesession-allowconnections-' . $cm->id);
+$table = new flexible_table('quizaccess-oneconnection-allowconnections-' . $cm->id);
 
 $table->define_baseurl($baseurl);
 $table->define_columns([
@@ -462,13 +462,13 @@ $table->define_headers([
     '',
     get_string('fullnameuser'),
     get_string('email'),
-    get_string('statusattempt', 'quizaccess_onesession'),
-    get_string('changeinconnection', 'quizaccess_onesession'),
-    get_string('changeallowed', 'quizaccess_onesession'),
+    get_string('statusattempt', 'quizaccess_oneconnection'),
+    get_string('changeinconnection', 'quizaccess_oneconnection'),
+    get_string('changeallowed', 'quizaccess_oneconnection'),
 ]);
 $table->sortable(true, 'fullname', SORT_ASC);
 $table->no_sorting('select');
-$table->set_attribute('class', 'flexible table table-striped table-hover generaltable quizaccess-onesession-table');
+$table->set_attribute('class', 'flexible table table-striped table-hover generaltable quizaccess-oneconnection-table');
 
 // Count total with subquery (to avoid duplicate rows from joins).
 $countsql = "SELECT COUNT(1)
@@ -581,22 +581,22 @@ foreach ($records as $r) {
     $statetext = '';
     switch ($r->state) {
         case 'notstarted':
-            $statetext = get_string('state_notstarted', 'quizaccess_onesession');
+            $statetext = get_string('state_notstarted', 'quizaccess_oneconnection');
             break;
         case 'inprogress':
-            $statetext = get_string('state_inprogress', 'quizaccess_onesession');
+            $statetext = get_string('state_inprogress', 'quizaccess_oneconnection');
             break;
         case 'overdue':
-            $statetext = get_string('state_overdue', 'quizaccess_onesession');
+            $statetext = get_string('state_overdue', 'quizaccess_oneconnection');
             break;
         case 'submitted':
-            $statetext = get_string('state_submitted', 'quizaccess_onesession');
+            $statetext = get_string('state_submitted', 'quizaccess_oneconnection');
             break;
         case 'finished':
-            $statetext = get_string('state_finished', 'quizaccess_onesession');
+            $statetext = get_string('state_finished', 'quizaccess_oneconnection');
             break;
         case 'abandoned':
-            $statetext = get_string('state_abandoned', 'quizaccess_onesession');
+            $statetext = get_string('state_abandoned', 'quizaccess_oneconnection');
             break;
         default:
             $statetext = $r->state ? s($r->state) : '';
@@ -609,11 +609,11 @@ foreach ($records as $r) {
             'attemptid' => $r->attemptid,
             'sesskey' => sesskey(),
         ]);
-        $changeinconnection = html_writer::link($unlockurl, get_string('allowchange', 'quizaccess_onesession'));
+        $changeinconnection = html_writer::link($unlockurl, get_string('allowchange', 'quizaccess_oneconnection'));
     } else if (!empty($r->attemptid)) {
-        $changeinconnection = get_string('notpossible', 'quizaccess_onesession');
+        $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
     } else {
-        $changeinconnection = get_string('notpossible', 'quizaccess_onesession');
+        $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
     }
 
     // Change allowed column – use log table data if any.
@@ -627,7 +627,7 @@ foreach ($records as $r) {
             'time' => userdate($r->timeunlocked),
             'fullname' => fullname($unlockuser),
         ];
-        $changeallowed = get_string('allowedbyon', 'quizaccess_onesession', $a);
+        $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
     }
 
     // User profile link.
@@ -651,7 +651,7 @@ echo html_writer::start_div('buttons');
 echo html_writer::empty_tag('input', [
     'type' => 'submit',
     'name' => 'unlockselected',
-    'value' => get_string('allowchangeinconnection', 'quizaccess_onesession'),
+    'value' => get_string('allowchangeinconnection', 'quizaccess_oneconnection'),
     'class' => 'btn btn-primary mt-2',
 ]);
 echo html_writer::end_div();
