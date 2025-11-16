@@ -69,3 +69,5 @@ $string['unlocksuccess'] = 'Verbindungswechsel für {$a} Versuch(e) erlaubt.';
 $string['whattoincludeinreport'] = 'Was soll im Bericht enthalten sein';
 $string['whitelist'] = 'Netzwerke ohne IP-Prüfung';
 $string['whitelist_desc'] = 'Diese Option soll Fehlalarme reduzieren, wenn Tests über Mobilfunknetze durchgeführt werden, bei denen sich die IP-Adresse ändern kann. In den meisten Situationen ist keine Angabe erforderlich.';
+$string['downloadcsv'] = 'Tabelle als CSV exportieren';
+$string['downloadexcel'] = 'Tabelle als Excel-Datei exportieren';

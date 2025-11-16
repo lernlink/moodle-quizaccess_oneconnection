@@ -21,7 +21,8 @@
  *  - has filters for enrolled users / attempts;
  *  - supports pagination, sorting and initials bars;
  *  - allows unlocking a single attempt or multiple selected attempts;
- *  - logs every unlock action.
+ *  - logs every unlock action;
+ *  - supports CSV/Excel export of the current table view.
  *
  * @package     quizaccess_oneconnection
  * @copyright   2025
@@ -35,6 +36,220 @@ require_once($CFG->dirroot . '/mod/quiz/accessrule/oneconnection/classes/form/al
 
 use core_user;
 
+/**
+ * Export the Allow connections table as CSV or Excel.
+ *
+ * @param string   $download 'csv' or 'excel'.
+ * @param string   $sql      Full SQL (SELECT ... FROM ... ORDER BY ...).
+ * @param array    $params   SQL params.
+ * @param stdClass $quiz     Quiz record (for filename).
+ * @return void
+ */
+function quizaccess_oneconnection_export_table(string $download, string $sql, array $params, stdClass $quiz): void
+{
+    global $DB;
+
+    // No extension here – core\dataformat will add it for Excel,
+    // and we add it manually for CSV.
+    $filename = clean_filename($quiz->name . '_allowconnections_' . userdate(time(), '%Y%m%d-%H%M'));
+
+    // -----------------------------------------------------------------
+    // Excel export: real .xlsx via core\dataformat.
+    // -----------------------------------------------------------------
+    if ($download === 'excel') {
+        $columns = [
+            'fullname' => get_string('firstname') . ' ' . get_string('lastname'),
+            'email' => get_string('email'),
+            'status' => get_string('statusattempt', 'quizaccess_oneconnection'),
+            'changeinconnection' => get_string('changeinconnection', 'quizaccess_oneconnection'),
+            'changeallowed' => get_string('changeallowed', 'quizaccess_oneconnection'),
+        ];
+
+        // Build an in-memory iterable of rows with the exact column keys.
+        $data = [];
+
+        $rs = $DB->get_recordset_sql($sql, $params);
+        foreach ($rs as $r) {
+            $canunlocknow = !empty($r->attemptid) && ($r->state === 'inprogress' || $r->state === 'overdue');
+
+            // Status text.
+            switch ($r->state) {
+                case 'notstarted':
+                    $statetext = get_string('state_notstarted', 'quizaccess_oneconnection');
+                    break;
+                case 'inprogress':
+                    $statetext = get_string('state_inprogress', 'quizaccess_oneconnection');
+                    break;
+                case 'overdue':
+                    $statetext = get_string('state_overdue', 'quizaccess_oneconnection');
+                    break;
+                case 'submitted':
+                    $statetext = get_string('state_submitted', 'quizaccess_oneconnection');
+                    break;
+                case 'finished':
+                    $statetext = get_string('state_finished', 'quizaccess_oneconnection');
+                    break;
+                case 'abandoned':
+                    $statetext = get_string('state_abandoned', 'quizaccess_oneconnection');
+                    break;
+                default:
+                    $statetext = $r->state ?? '';
+            }
+
+            // "Change in connection" column (plain text).
+            if ($canunlocknow) {
+                $changeinconnection = get_string('allowchange', 'quizaccess_oneconnection');
+            } else if (!empty($r->attemptid)) {
+                $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
+            } else {
+                $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
+            }
+
+            // "Change allowed" column from log table (if any).
+            $changeallowed = '';
+            if (!empty($r->unlockedby) && !empty($r->timeunlocked)) {
+                $unlockuser = core_user::get_user(
+                    $r->unlockedby,
+                    'id,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename'
+                );
+                $a = (object) [
+                    'time' => userdate($r->timeunlocked),
+                    'fullname' => fullname($unlockuser),
+                ];
+                $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
+            }
+
+            // Full name (respecting name fields).
+            $userforfullname = (object) [
+                'id' => $r->userid,
+                'firstname' => $r->firstname,
+                'lastname' => $r->lastname,
+                'firstnamephonetic' => $r->firstnamephonetic,
+                'lastnamephonetic' => $r->lastnamephonetic,
+                'middlename' => $r->middlename,
+                'alternatename' => $r->alternatename,
+            ];
+            $fullname = fullname($userforfullname);
+
+            $row = new stdClass();
+            $row->fullname = $fullname;
+            $row->email = $r->email;
+            $row->status = $statetext;
+            $row->changeinconnection = $changeinconnection;
+            $row->changeallowed = $changeallowed;
+
+            $data[] = $row;
+        }
+        $rs->close();
+
+        // Correct argument order:
+        // (filename, dataformat, columns, iterable-of-records).
+        \core\dataformat::download_data($filename, 'excel', $columns, $data);
+        exit;
+    }
+
+    // -----------------------------------------------------------------
+    // CSV export: same as before (streamed text CSV).
+    // -----------------------------------------------------------------
+    $mimetype = 'text/csv';
+    $extension = '.csv';
+    $delimiter = ',';
+
+    header('Content-Type: ' . $mimetype . '; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . $extension . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    $out = fopen('php://output', 'w');
+
+    // Header row (no selection column).
+    $headers = [
+        get_string('firstname') . ' ' . get_string('lastname'),
+        get_string('email'),
+        get_string('statusattempt', 'quizaccess_oneconnection'),
+        get_string('changeinconnection', 'quizaccess_oneconnection'),
+        get_string('changeallowed', 'quizaccess_oneconnection'),
+    ];
+    fputcsv($out, $headers, $delimiter);
+
+    $rs = $DB->get_recordset_sql($sql, $params);
+    foreach ($rs as $r) {
+        $canunlocknow = !empty($r->attemptid) && ($r->state === 'inprogress' || $r->state === 'overdue');
+
+        // Status text.
+        switch ($r->state) {
+            case 'notstarted':
+                $statetext = get_string('state_notstarted', 'quizaccess_oneconnection');
+                break;
+            case 'inprogress':
+                $statetext = get_string('state_inprogress', 'quizaccess_oneconnection');
+                break;
+            case 'overdue':
+                $statetext = get_string('state_overdue', 'quizaccess_oneconnection');
+                break;
+            case 'submitted':
+                $statetext = get_string('state_submitted', 'quizaccess_oneconnection');
+                break;
+            case 'finished':
+                $statetext = get_string('state_finished', 'quizaccess_oneconnection');
+                break;
+            case 'abandoned':
+                $statetext = get_string('state_abandoned', 'quizaccess_oneconnection');
+                break;
+            default:
+                $statetext = $r->state ?? '';
+        }
+
+        // "Change in connection" column.
+        if ($canunlocknow) {
+            $changeinconnection = get_string('allowchange', 'quizaccess_oneconnection');
+        } else if (!empty($r->attemptid)) {
+            $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
+        } else {
+            $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
+        }
+
+        // "Change allowed" column from log table (if any).
+        $changeallowed = '';
+        if (!empty($r->unlockedby) && !empty($r->timeunlocked)) {
+            $unlockuser = core_user::get_user(
+                $r->unlockedby,
+                'id,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename'
+            );
+            $a = (object) [
+                'time' => userdate($r->timeunlocked),
+                'fullname' => fullname($unlockuser),
+            ];
+            $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
+        }
+
+        // Full name for CSV.
+        $userforfullname = (object) [
+            'id' => $r->userid,
+            'firstname' => $r->firstname,
+            'lastname' => $r->lastname,
+            'firstnamephonetic' => $r->firstnamephonetic,
+            'lastnamephonetic' => $r->lastnamephonetic,
+            'middlename' => $r->middlename,
+            'alternatename' => $r->alternatename,
+        ];
+        $fullname = fullname($userforfullname);
+
+        $row = [
+            $fullname,
+            $r->email,
+            $statetext,
+            $changeinconnection,
+            $changeallowed,
+        ];
+
+        fputcsv($out, $row, $delimiter);
+    }
+    $rs->close();
+    fclose($out);
+    exit;
+}
+
 $id = required_param('id', PARAM_INT); // Course module ID.
 
 // Filters (like quiz report).
@@ -43,9 +258,18 @@ $pagesize = optional_param('pagesize', 30, PARAM_INT);
 $firstnameinitial = optional_param('tifirst', '', PARAM_ALPHA);
 $lastnameinitial = optional_param('tilast', '', PARAM_ALPHA);
 
+// If the user clicked "Reset table preferences", also clear initials.
+if (optional_param('treset', 0, PARAM_BOOL)) {
+    $firstnameinitial = '';
+    $lastnameinitial = '';
+}
+
 // Sorting (preserve and honour flexible_table 'sort' & 'dir' params).
 $sort = optional_param('sort', 'firstname', PARAM_ALPHA); // 'firstname' default.
 $dir = optional_param('dir', 'ASC', PARAM_ALPHA);
+
+// Download type (empty string = normal HTML output).
+$download = optional_param('download', '', PARAM_ALPHA);
 
 // Attempt state checkboxes. If none are present in the URL we use the default (all on).
 $attemptstate = optional_param_array('attemptstate', null, PARAM_BOOL);
@@ -83,6 +307,7 @@ $PAGE->set_pagelayout('report');
 $action = optional_param('action', '', PARAM_ALPHA);
 if ($action === 'unlock' && confirm_sesskey()) {
     $attemptid = required_param('attemptid', PARAM_INT);
+    $unlocked = false;
 
     // Only unlock attempts that are in progress or overdue.
     $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid], 'id,userid,state', IGNORE_MISSING);
@@ -111,6 +336,8 @@ if ($action === 'unlock' && confirm_sesskey()) {
             'other' => ['quizid' => $quiz->id],
         ]);
         $event->trigger();
+
+        $unlocked = true;
     }
 
     // Redirect back (keep filters).
@@ -128,7 +355,18 @@ if ($action === 'unlock' && confirm_sesskey()) {
             $backurl->param("attemptstate[$k]", 1);
         }
     }
-    redirect($backurl);
+
+    if ($unlocked) {
+        // Nice green success alert after redirect.
+        redirect(
+            $backurl,
+            get_string('unlocksuccess', 'quizaccess_oneconnection', 1),
+            0,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    } else {
+        redirect($backurl);
+    }
 }
 
 // Build the filter form.
@@ -141,25 +379,27 @@ $customdata = [
 $mform = new \quizaccess_oneconnection\form\allowconnections_settings_form(null, $customdata);
 
 // If the form is submitted, redirect to the same page with clean params (GET).
-if ($mform->is_cancelled()) {
-    redirect(new moodle_url('/mod/quiz/view.php', ['id' => $cm->id]));
-}
-if ($data = $mform->get_data()) {
-    $params = [
-        'id' => $cm->id,
-        'attemptsfrom' => $data->attemptsfrom,
-        'pagesize' => $data->pagesize,
-        'sort' => $sort,
-        'dir' => $dir,
-    ];
-    if (!empty($data->attemptstate) && is_array($data->attemptstate)) {
-        foreach ($data->attemptstate as $k => $v) {
-            if ($v) {
-                $params["attemptstate[$k]"] = 1;
+if (!$download) {
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('/mod/quiz/view.php', ['id' => $cm->id]));
+    }
+    if ($data = $mform->get_data()) {
+        $params = [
+            'id' => $cm->id,
+            'attemptsfrom' => $data->attemptsfrom,
+            'pagesize' => $data->pagesize,
+            'sort' => $sort,
+            'dir' => $dir,
+        ];
+        if (!empty($data->attemptstate) && is_array($data->attemptstate)) {
+            foreach ($data->attemptstate as $k => $v) {
+                if ($v) {
+                    $params["attemptstate[$k]"] = 1;
+                }
             }
         }
+        redirect(new moodle_url($PAGE->url, $params));
     }
-    redirect(new moodle_url($PAGE->url, $params));
 }
 
 // Normalize attemptstate for filtering later (1/0).
@@ -175,6 +415,8 @@ $normalizedattemptstate = [
 // Handle POST (unlock selected)
 if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
     $selected = optional_param_array('attemptid', [], PARAM_INT);
+    $unlockedcount = 0;
+
     if (!empty($selected)) {
         foreach ($selected as $attemptid) {
             // Only unlock valid states.
@@ -205,6 +447,8 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
                 'other' => ['quizid' => $quiz->id],
             ]);
             $event->trigger();
+
+            $unlockedcount++;
         }
     }
 
@@ -223,7 +467,17 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
             $backurl->param("attemptstate[$k]", 1);
         }
     }
-    redirect($backurl);
+
+    if ($unlockedcount > 0) {
+        redirect(
+            $backurl,
+            get_string('unlocksuccess', 'quizaccess_oneconnection', $unlockedcount),
+            0,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    } else {
+        redirect($backurl);
+    }
 }
 
 // Build base URL for table links (sort, initials, paging).
@@ -244,81 +498,6 @@ foreach ($normalizedattemptstate as $k => $v) {
 
 // Sorting direction sanitization.
 $dir = strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC';
-
-// Output starts.
-echo $OUTPUT->header();
-
-// 1) Tertiary navigation like quiz Results.
-$stringman = get_string_manager();
-$reportoptions = [];
-
-// Add real quiz reports if present.
-if ($stringman->string_exists('overview', 'quiz')) {
-    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
-        'id' => $cm->id,
-        'mode' => 'overview',
-    ]))->out(false)] = get_string('overview', 'quiz');
-}
-if ($stringman->string_exists('responses', 'quiz')) {
-    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
-        'id' => $cm->id,
-        'mode' => 'responses',
-    ]))->out(false)] = get_string('responses', 'quiz');
-}
-if ($stringman->string_exists('statistics', 'quiz')) {
-    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
-        'id' => $cm->id,
-        'mode' => 'statistics',
-    ]))->out(false)] = get_string('statistics', 'quiz');
-}
-
-// Filter form.
-$mform->display();
-
-// Custom initials bars (because core initials_bar() needs a baseurl).
-$letters = range('A', 'Z');
-
-// Firstname initials bar.
-echo html_writer::start_div('initialsbar');
-echo html_writer::tag('strong', get_string('firstname') . ' ');
-$allurl = clone $baseurl;
-$allurl->param('tifirst', '');
-if ($firstnameinitial === '') {
-    echo html_writer::tag('strong', get_string('all'));
-} else {
-    echo html_writer::link($allurl, get_string('all'));
-}
-foreach ($letters as $letter) {
-    $letterurl = clone $baseurl;
-    $letterurl->param('tifirst', $letter);
-    if ($firstnameinitial === $letter) {
-        echo ' ' . html_writer::tag('strong', $letter);
-    } else {
-        echo ' ' . html_writer::link($letterurl, $letter);
-    }
-}
-echo html_writer::end_div();
-
-// Lastname initials bar.
-echo html_writer::start_div('initialsbar');
-echo html_writer::tag('strong', get_string('lastname') . ' ');
-$allurl = clone $baseurl;
-$allurl->param('tilast', '');
-if ($lastnameinitial === '') {
-    echo html_writer::tag('strong', get_string('all'));
-} else {
-    echo html_writer::link($allurl, get_string('all'));
-}
-foreach ($letters as $letter) {
-    $letterurl = clone $baseurl;
-    $letterurl->param('tilast', $letter);
-    if ($lastnameinitial === $letter) {
-        echo ' ' . html_writer::tag('strong', $letter);
-    } else {
-        echo ' ' . html_writer::link($letterurl, $letter);
-    }
-}
-echo html_writer::end_div();
 
 // Build state filter SQL (for attempts).
 $statelikes = [];
@@ -452,14 +631,194 @@ $basefromsql = "FROM {user} u
                 $latestunlockjoin
                 $wheresql";
 
+// Common SELECT fields used both for HTML table and downloads.
+$selectfields = "SELECT
+                    COALESCE(qa.id, -u.id) AS uniqueid,
+                    u.id AS userid,
+                    u.firstname,
+                    u.lastname,
+                    u.email,
+                    u.firstnamephonetic,
+                    u.lastnamephonetic,
+                    u.middlename,
+                    u.alternatename,
+                    qa.id AS attemptid,
+                    qa.state,
+                    qa.timestart,
+                    qa.timefinish,
+                    qlog.unlockedby,
+                    qlog.timeunlocked
+               ";
+
+// If a download is requested, build ORDER BY based on 'sort' & 'dir',
+// export and exit *before* rendering the HTML table.
+if (!empty($download)) {
+    $orderby = [];
+    $sortdirection = (strtoupper($dir) === 'DESC') ? 'DESC' : 'ASC';
+
+    switch ($sort) {
+        case 'lastname':
+            $orderby[] = "u.lastname $sortdirection, u.firstname $sortdirection";
+            break;
+        case 'email':
+            $orderby[] = "u.email $sortdirection";
+            break;
+        case 'status':
+            // Alphabetical by state (attempts first).
+            $orderby[] = "COALESCE(qa.state, 'zzzz') $sortdirection";
+            $orderby[] = "u.firstname ASC, u.lastname ASC";
+            break;
+        case 'changeinconnection':
+            // Sort by possibility first.
+            $orderby[] = "CASE
+                WHEN qa.id IS NOT NULL AND (qa.state = 'inprogress' OR qa.state = 'overdue') THEN 0
+                WHEN qa.id IS NOT NULL THEN 1
+                ELSE 2
+            END $sortdirection";
+            $orderby[] = "u.firstname ASC, u.lastname ASC";
+            break;
+        case 'changeallowed':
+            $orderby[] = "CASE WHEN qlog.timeunlocked IS NULL THEN 1 ELSE 0 END $sortdirection";
+            $orderby[] = "qlog.timeunlocked $sortdirection";
+            $orderby[] = "u.firstname ASC, u.lastname ASC";
+            break;
+        case 'fullname': // Backwards compatibility.
+        case 'firstname':
+        default:
+            $orderby[] = "u.firstname $sortdirection, u.lastname $sortdirection";
+            break;
+    }
+
+    $exportsql = $selectfields . "
+                 $basefromsql
+             ORDER BY " . implode(', ', $orderby);
+
+    quizaccess_oneconnection_export_table($download, $exportsql, $params, $quiz);
+    // Never returns.
+}
+
+// -----------------------------
+// Normal HTML table continues.
+// -----------------------------
+
+// Output starts (HTML only, not for downloads).
+echo $OUTPUT->header();
+
+// 1) Tertiary navigation like quiz Results.
+$stringman = get_string_manager();
+$reportoptions = [];
+
+// Add real quiz reports if present.
+if ($stringman->string_exists('overview', 'quiz')) {
+    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
+        'id' => $cm->id,
+        'mode' => 'overview',
+    ]))->out(false)] = get_string('overview', 'quiz');
+}
+if ($stringman->string_exists('responses', 'quiz')) {
+    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
+        'id' => $cm->id,
+        'mode' => 'responses',
+    ]))->out(false)] = get_string('responses', 'quiz');
+}
+if ($stringman->string_exists('statistics', 'quiz')) {
+    $reportoptions[(new moodle_url('/mod/quiz/report.php', [
+        'id' => $cm->id,
+        'mode' => 'statistics',
+    ]))->out(false)] = get_string('statistics', 'quiz');
+}
+
+// Filter form.
+$mform->display();
+
+// --- START OF INITIALS BAR SECTION ---
+
+$letters = range('A', 'Z');
+
+// First name initials bar.
+echo html_writer::start_div('initialbar firstinitial d-flex flex-wrap justify-content-center justify-content-md-start mb-2');
+echo html_writer::tag('span', get_string('firstname'), ['class' => 'initialbarlabel me-2']);
+echo html_writer::start_tag('nav', ['class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start']);
+echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
+
+// "All" button for first name.
+$allurl = clone $baseurl;
+$allurl->param('tifirst', '');
+$isactive = ($firstnameinitial === '');
+$liclasses = 'initialbarall page-item' . ($isactive ? ' active' : '');
+$link = html_writer::link($allurl, get_string('all'), ['class' => 'page-link']);
+echo html_writer::tag('li', $link, ['class' => $liclasses]);
+echo html_writer::end_tag('ul');
+
+// Letter buttons for first name.
+echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
+foreach ($letters as $letter) {
+    $letterurl = clone $baseurl;
+    $letterurl->param('tifirst', $letter);
+    $isactive = ($firstnameinitial === $letter);
+    $liclasses = 'page-item' . ($isactive ? ' active' : '');
+    $link = html_writer::link($letterurl, $letter, ['class' => 'page-link']);
+    echo html_writer::tag('li', $link, ['class' => $liclasses]);
+}
+echo html_writer::end_tag('ul');
+echo html_writer::end_tag('nav');
+echo html_writer::end_div();
+
+// Last name initials bar.
+echo html_writer::start_div('initialbar lastinitial d-flex flex-wrap justify-content-center justify-content-md-start');
+echo html_writer::tag('span', get_string('lastname'), ['class' => 'initialbarlabel me-2']);
+echo html_writer::start_tag('nav', ['class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start']);
+echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
+
+// "All" button for last name.
+$allurl = clone $baseurl;
+$allurl->param('tilast', '');
+$isactive = ($lastnameinitial === '');
+$liclasses = 'initialbarall page-item' . ($isactive ? ' active' : '');
+$link = html_writer::link($allurl, get_string('all'), ['class' => 'page-link']);
+echo html_writer::tag('li', $link, ['class' => $liclasses]);
+echo html_writer::end_tag('ul');
+
+// Letter buttons for last name.
+echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
+foreach ($letters as $letter) {
+    $letterurl = clone $baseurl;
+    $letterurl->param('tilast', $letter);
+    $isactive = ($lastnameinitial === $letter);
+    $liclasses = 'page-item' . ($isactive ? ' active' : '');
+    $link = html_writer::link($letterurl, $letter, ['class' => 'page-link']);
+    echo html_writer::tag('li', $link, ['class' => $liclasses]);
+}
+echo html_writer::end_tag('ul');
+echo html_writer::end_tag('nav');
+echo html_writer::end_div();
+
+// --- END OF INITIALS BAR SECTION ---
+
+// Export buttons.
+$downloadcsvurl = new moodle_url($baseurl, ['download' => 'csv']);
+$downloadexcelurl = new moodle_url($baseurl, ['download' => 'excel']);
+
+echo html_writer::start_div('initialbar-export mb-3 mt-2');
+echo html_writer::link(
+    $downloadcsvurl,
+    get_string('downloadcsv', 'quizaccess_oneconnection'),
+    ['class' => 'btn btn-secondary me-2']
+);
+echo html_writer::link(
+    $downloadexcelurl,
+    get_string('downloadexcel', 'quizaccess_oneconnection'),
+    ['class' => 'btn btn-secondary']
+);
+echo html_writer::end_div();
+
 // Prepare table.
 $table = new flexible_table('quizaccess-oneconnection-allowconnections-' . $cm->id);
 
 $table->define_baseurl($baseurl);
 $table->define_columns([
     'select',
-    'firstname',
-    'lastname',
+    'fullname',
     'email',
     'status',
     'changeinconnection',
@@ -467,8 +826,7 @@ $table->define_columns([
 ]);
 $table->define_headers([
     '',
-    get_string('firstname'),
-    get_string('lastname'),
+    get_string('firstname') . ' ' . get_string('lastname'),
     get_string('email'),
     get_string('statusattempt', 'quizaccess_oneconnection'),
     get_string('changeinconnection', 'quizaccess_oneconnection'),
@@ -544,28 +902,13 @@ if (empty($orderby)) {
     $orderby[] = "u.firstname ASC, u.lastname ASC";
 }
 
-$selectsql = "SELECT
-                    COALESCE(qa.id, -u.id) AS uniqueid,
-                    u.id AS userid,
-                    u.firstname,
-                    u.lastname,
-                    u.email,
-                    u.firstnamephonetic,
-                    u.lastnamephonetic,
-                    u.middlename,
-                    u.alternatename,
-                    qa.id AS attemptid,
-                    qa.state,
-                    qa.timestart,
-                    qa.timefinish,
-                    qlog.unlockedby,
-                    qlog.timeunlocked
+$selectsql = $selectfields . "
                $basefromsql
            ORDER BY " . implode(', ', $orderby);
 
 $records = $DB->get_records_sql($selectsql, $params, $offset, $perpage);
 
-// 6) Render table rows.
+// Render table rows.
 echo html_writer::start_tag('form', [
     'action' => $baseurl,
     'method' => 'post',
@@ -644,15 +987,13 @@ foreach ($records as $r) {
         $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
     }
 
-    // User profile link (link first name; show last name separately).
+    // User profile link.
     $profileurl = new moodle_url('/user/view.php', ['id' => $r->userid, 'course' => $course->id]);
-    $firstnamecell = html_writer::link($profileurl, s($r->firstname));
-    $lastnamecell = s($r->lastname);
+    $fullnamecell = html_writer::link($profileurl, s($r->firstname . ' ' . $r->lastname));
 
     $table->add_data([
         $selectbox,
-        $firstnamecell,
-        $lastnamecell,
+        $fullnamecell,
         s($r->email),
         $statetext,
         $changeinconnection,

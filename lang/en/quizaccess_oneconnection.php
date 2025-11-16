@@ -69,3 +69,5 @@ $string['unlocksuccess'] = 'Connection change allowed for {$a} attempt(s).';
 $string['whattoincludeinreport'] = 'What to include in the report';
 $string['whitelist'] = 'Networks without IP check';
 $string['whitelist_desc'] = 'This option is intended to lower false positives when users takes quizzes over mobile networks, where IP can be changed during quiz. It is not needed in most of situations. You can provide a comma separated list of subnets (e.g. 88.0.0.0/8, 77.77.0.0/16). If an IP address is in such a network, it\'s not checked. To totally disable the IP check, you can set the value to 0.0.0.0/0.';
+$string['downloadcsv'] = 'Export table as CSV';
+$string['downloadexcel'] = 'Export table as Excel';

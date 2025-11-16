@@ -1,4 +1,6 @@
 <?php
+
+use function PHPUnit\Framework\throwException;
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -150,7 +152,7 @@ class quizaccess_oneconnection extends access_rule_base
      */
     private function is_attempt_blocked(int $attemptid): bool
     {
-        global $DB;
+        global $DB, $PAGE;
 
         if (!$attemptid) {
             return false;
@@ -165,7 +167,7 @@ class quizaccess_oneconnection extends access_rule_base
             return false;
         }
 
-        return true;
+        throw new moodle_exception('anothersession', 'quizaccess_oneconnection', $PAGE->url);
     }
 
     /**
