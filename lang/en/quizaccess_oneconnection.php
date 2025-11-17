@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['allowchange'] = 'Allow change';
-$string['allowchangeinconnection'] = 'Allow change in connection for selected attempts';
+$string['allowchangeinconnection'] = 'Allow connection change for selected attempts';
 $string['allowconnections'] = 'Allow connection changes';
 $string['allowedbyon'] = 'Allowed by {$a->fullname} on {$a->time}';
 $string['anothersession'] = 'You are trying to access this quiz attempt from a different device or browser than the one you started with. If you need to switch devices, please contact the invigilator.';
