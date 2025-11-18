@@ -26,6 +26,7 @@ use function PHPUnit\Framework\throwException;
 
 defined('MOODLE_INTERNAL') || die();
 
+// Backwards compatibility for Moodle versions before the quiz_attempt class was moved.
 if (file_exists($CFG->dirroot . '/mod/quiz/locallib.php')) {
     require_once($CFG->dirroot . '/mod/quiz/locallib.php'); // For quiz_attempt.
 } else if (file_exists($CFG->dirroot . '/mod/quiz/classes/quiz_attempt.php')) {
@@ -45,6 +46,8 @@ use mod_quiz\quiz_attempt;
  * - Storing a signed "session fingerprint" that describes the current client.
  * - Validating the stored fingerprint on every subsequent access.
  * - Blocking the attempt (via the preflight form) when the fingerprint changes.
+ *
+ * @package quizaccess_oneconnection
  */
 class quizaccess_oneconnection extends access_rule_base
 {
@@ -73,12 +76,16 @@ class quizaccess_oneconnection extends access_rule_base
      * - the HMAC is calculated over the current session fingerprint.
      *
      * @return string Session hash in the format "secret|hmac".
-     * @throws Exception If random_bytes() fails.
+     * @throws coding_exception If random_bytes() fails.
      */
     private function get_session_hash(): string
     {
         $sessionstring = $this->get_session_string();
-        $secret = random_bytes(16);
+        try {
+            $secret = random_bytes(16);
+        } catch (Exception $e) {
+            throw new coding_exception('Could not generate random bytes for session hash.', $e);
+        }
         return bin2hex($secret) . '|' . hash_hmac('sha256', $sessionstring, $secret);
     }
 
@@ -96,10 +103,10 @@ class quizaccess_oneconnection extends access_rule_base
     {
         $sessionstring = [];
 
-        // Moodle session.
+        // 1. Moodle session.
         $sessionstring[] = sesskey();
 
-        // IP (unless whitelisted).
+        // 2. IP address (unless whitelisted).
         $whitelist = (string) get_config('quizaccess_oneconnection', 'whitelist');
         $ipaddress = getremoteaddr();
         if ($ipaddress) {
@@ -112,7 +119,7 @@ class quizaccess_oneconnection extends access_rule_base
             }
         }
 
-        // User agent.
+        // 3. User agent.
         $sessionstring[] = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
         return implode('', $sessionstring);
@@ -137,6 +144,7 @@ class quizaccess_oneconnection extends access_rule_base
 
         $secret = @hex2bin($secrethex);
         if ($secret === false) {
+            // Invalid hex string.
             return false;
         }
 
@@ -149,6 +157,7 @@ class quizaccess_oneconnection extends access_rule_base
      *
      * @param int $attemptid Quiz attempt ID.
      * @return bool True if the attempt is blocked, false if it is either unbound or valid for this session.
+     * @throws moodle_exception If the session is invalid, an exception is thrown to be caught by is_preflight_check_required.
      */
     private function is_attempt_blocked(int $attemptid): bool
     {
@@ -160,13 +169,17 @@ class quizaccess_oneconnection extends access_rule_base
 
         $session = $DB->get_record('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
         if (empty($session)) {
+            // No session lock exists, so it cannot be blocked.
             return false;
         }
 
         if ($this->validate_session_hash($session->sessionhash)) {
+            // Session is valid.
             return false;
         }
 
+        // The session is invalid, which means the attempt is blocked.
+        // We throw an exception here which is caught and handled gracefully in the pre-flight check.
         throw new moodle_exception('anothersession', 'quizaccess_oneconnection', $PAGE->url);
     }
 
@@ -190,6 +203,7 @@ class quizaccess_oneconnection extends access_rule_base
 
         $attemptobj = quiz_attempt::create($attemptid);
         if ($attemptobj->is_preview()) {
+            // Never block teachers previewing the quiz.
             return false;
         }
 
@@ -205,10 +219,11 @@ class quizaccess_oneconnection extends access_rule_base
         }
 
         if ($this->validate_session_hash($session->sessionhash)) {
+            // Session fingerprint matches, no preflight check needed.
             return false;
         }
 
-        // Log the blocked attempt for teachers / invigilators.
+        // If we reach here, the session is invalid. Log the blocked attempt.
         $params = [
             'objectid' => $attemptobj->get_attemptid(),
             'relateduserid' => $attemptobj->get_userid(),
@@ -221,6 +236,7 @@ class quizaccess_oneconnection extends access_rule_base
         $event = attempt_blocked::create($params);
         $event->trigger();
 
+        // A preflight check is required to show the error message.
         return true;
     }
 
@@ -238,7 +254,7 @@ class quizaccess_oneconnection extends access_rule_base
             return;
         }
 
-        // Human-readable message for the student.
+        // Human-readable error message for the student.
         $mform->addElement(
             'static',
             'oneconnectionblocked',
@@ -246,7 +262,8 @@ class quizaccess_oneconnection extends access_rule_base
             get_string('anothersession', 'quizaccess_oneconnection')
         );
 
-        // Hide submit/cancel buttons to prevent continuing.
+        // Hide submit/cancel buttons to prevent the student from continuing.
+        // This CSS is a primary defense.
         $mform->addElement(
             'static',
             'oneconnectioncss',
@@ -260,7 +277,7 @@ class quizaccess_oneconnection extends access_rule_base
             </style>'
         );
 
-        // Provide teachers/invigilators with a link to unblock.
+        // Provide teachers/invigilators with a link to the page where they can unblock the attempt.
         $context = $this->quizobj->get_context();
         if (has_capability('quizaccess/oneconnection:allowchange', $context)) {
             $url = new \moodle_url(
@@ -271,7 +288,7 @@ class quizaccess_oneconnection extends access_rule_base
             $mform->addElement('static', 'oneconnectionmanage', '', $link);
         }
 
-        // Extra safety for any themes that still display the buttons.
+        // Add JavaScript as a secondary defense to hide buttons, for any themes that might override the CSS.
         $js = <<<JS
             <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -310,7 +327,7 @@ class quizaccess_oneconnection extends access_rule_base
     /**
      * Return null so Moodle does NOT show a generic exception screen.
      *
-     * We handle blocking via the preflight form instead.
+     * We handle blocking via the preflight form instead, which provides a better user experience.
      *
      * @return string|null Always null.
      */
@@ -328,6 +345,7 @@ class quizaccess_oneconnection extends access_rule_base
     {
         $messages = [get_string('studentinfo', 'quizaccess_oneconnection')];
 
+        // If the rule is active, show a button for teachers to manage connection locks.
         if (!empty($this->quiz->oneconnectionenabled)) {
             $context = $this->quizobj->get_context();
             if (has_capability('quizaccess/oneconnection:allowchange', $context)) {
@@ -349,6 +367,8 @@ class quizaccess_oneconnection extends access_rule_base
 
     /**
      * Setup attempt page – intentionally left empty.
+     *
+     * No special setup is required on the attempt page itself.
      *
      * @param moodle_page $page Current page.
      * @return void
@@ -373,13 +393,13 @@ class quizaccess_oneconnection extends access_rule_base
         $pluginconfig = get_config('quizaccess_oneconnection') ?: (object) [];
         $defaultenabled = isset($pluginconfig->defaultenabled) ? (int) $pluginconfig->defaultenabled : 0;
 
-        // Always show the option to teachers, but only allow changing it when permitted.
+        // Add the checkbox to enable/disable the rule for this quiz.
         $mform->addElement('checkbox', 'oneconnectionenabled', get_string('oneconnection', 'quizaccess_oneconnection'));
         $mform->setDefault('oneconnectionenabled', $defaultenabled);
         $mform->addHelpButton('oneconnectionenabled', 'oneconnection', 'quizaccess_oneconnection');
 
         if (!$canedit) {
-            // Visible but read-only if the role doesn't have permission to change it.
+            // If the user lacks the capability, show the setting but make it read-only.
             $mform->freeze('oneconnectionenabled');
         }
     }
@@ -394,47 +414,42 @@ class quizaccess_oneconnection extends access_rule_base
     {
         global $DB;
 
-        // Sometimes this is called in contexts where no CM/context is available (restore, CLI).
+        // In some contexts (e.g., restore, CLI), there might not be a course module context.
         $cm = get_coursemodule_from_instance('quiz', $quiz->id, $quiz->course, false, IGNORE_MISSING);
         if ($cm) {
             $context = \context_module::instance($cm->id, IGNORE_MISSING);
             if ($context && !has_capability('quizaccess/oneconnection:editenabled', $context)) {
-                // User is not allowed to change this plugin's quiz-level flag.
+                // User is not allowed to change this setting, so we do nothing.
                 return;
             }
         }
 
-        // Determine the intended state. If the property is not set on the $quiz object,
-        // it means the checkbox was unchecked on the form.
+        // If 'oneconnectionenabled' is not set, it means the checkbox was unchecked.
         $enabled = !empty($quiz->oneconnectionenabled) ? 1 : 0;
 
-        // Find out if a setting already exists for this quiz.
         $existing = $DB->get_record('quizaccess_oneconnection', ['quizid' => $quiz->id]);
 
         if ($existing) {
-            // A record already exists. Update its 'enabled' status if it has changed.
+            // A record already exists. Update it if the 'enabled' status has changed.
             if ($existing->enabled != $enabled) {
                 $DB->set_field('quizaccess_oneconnection', 'enabled', $enabled, ['id' => $existing->id]);
             }
         } else {
-            // No record exists for this quiz. We must create one to store the setting,
-            // whether it's enabled (1) or disabled (0). This ensures the quiz-specific
-            // choice overrides any site-wide default.
+            // No record exists. We create one to store the quiz-specific setting, overriding the site default.
             $record = new stdClass();
             $record->quizid = $quiz->id;
             $record->enabled = $enabled;
             $DB->insert_record('quizaccess_oneconnection', $record);
         }
 
-        // If the rule is being disabled, it's good practice to clean up any
-        // lingering session locks for this quiz.
+        // If the rule is being disabled for this quiz, clean up any lingering session locks.
         if (!$enabled) {
             $DB->delete_records('quizaccess_oneconnection_sess', ['quizid' => $quiz->id]);
         }
     }
 
     /**
-     * Delete all data when the quiz itself is deleted.
+     * Delete all data associated with this plugin when the quiz itself is deleted.
      *
      * @param object $quiz Quiz data object.
      * @return void
@@ -449,10 +464,10 @@ class quizaccess_oneconnection extends access_rule_base
     }
 
     /**
-     * Return SQL needed to load the per-quiz setting.
+     * Return SQL needed to load the per-quiz setting into the quiz object.
      *
      * @param int $quizid Quiz ID.
-     * @return array Array with select, join, params.
+     * @return array Array with select, join, and params for the DB query.
      */
     public static function get_settings_sql($quizid): array
     {

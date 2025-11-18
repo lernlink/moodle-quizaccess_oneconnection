@@ -30,7 +30,8 @@ use core\event\base;
 use moodle_url;
 
 /**
- * Attempt unlocked event.
+ * Event class for when a quiz attempt's session lock is manually removed.
+ * @package quizaccess_oneconnection\event
  */
 class attempt_unlocked extends base
 {
@@ -38,12 +39,14 @@ class attempt_unlocked extends base
     /**
      * Initialises the event data.
      *
+     * Sets the database table, action (CRUD type), and educational level.
+     *
      * @return void
      */
     protected function init(): void
     {
         $this->data['objecttable'] = 'quiz_attempts';
-        $this->data['crud'] = 'u';
+        $this->data['crud'] = 'u'; // 'u' for update, as the attempt state is being modified.
         $this->data['edulevel'] = self::LEVEL_TEACHING;
     }
 
@@ -58,7 +61,7 @@ class attempt_unlocked extends base
     }
 
     /**
-     * Returns description of what happened.
+     * Returns a human-readable description of what happened.
      *
      * @return string
      */
@@ -69,7 +72,7 @@ class attempt_unlocked extends base
     }
 
     /**
-     * Get URL related to the action.
+     * Get a URL related to this event.
      *
      * @return moodle_url
      */
@@ -79,7 +82,7 @@ class attempt_unlocked extends base
     }
 
     /**
-     * Custom validation.
+     * Custom validation to ensure necessary data is present.
      *
      * @throws coding_exception
      * @return void
@@ -98,7 +101,7 @@ class attempt_unlocked extends base
     }
 
     /**
-     * Mapping for objectid during restore.
+     * Provides mapping for the objectid during course restore.
      *
      * @return array|string
      */
@@ -108,7 +111,7 @@ class attempt_unlocked extends base
     }
 
     /**
-     * Mapping for additional data during restore.
+     * Provides mapping for additional 'other' data during course restore.
      *
      * @return array
      */

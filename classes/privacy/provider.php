@@ -37,16 +37,19 @@ use core_privacy\local\request\userlist;
 use core_privacy\local\request\core_userlist_provider;
 
 /**
- * Privacy provider.
+ * Privacy provider for the oneconnection plugin.
+ *
+ * Implements Moodle's privacy API to handle data requests and deletions.
+ * @package quizaccess_oneconnection\privacy
  */
 class provider implements metadata_provider, plugin_provider, core_userlist_provider
 {
 
     /**
-     * Describe stored data.
+     * Get the metadata that describes the data stored by this plugin.
      *
-     * @param collection $collection Current metadata collection.
-     * @return collection Updated collection.
+     * @param collection $collection The collection to add metadata to.
+     * @return collection The updated collection.
      */
     public static function get_metadata(collection $collection): collection
     {
@@ -61,12 +64,13 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Return contexts containing user data for this plugin.
+     * Return contexts containing user data for this plugin for a given user.
      *
-     * A user may appear here if they unlocked another user's attempt.
+     * A user may appear here if they are a teacher/invigilator who unlocked
+     * another user's quiz attempt.
      *
-     * @param int $userid The user ID.
-     * @return contextlist List of contexts.
+     * @param int $userid The user ID to search for.
+     * @return contextlist List of contexts where this user has data.
      */
     public static function get_contexts_for_userid(int $userid): contextlist
     {
@@ -95,18 +99,24 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Export user data (none – audit data only, not owned by the user).
+     * Export user data.
      *
-     * @param approved_contextlist $contextlist Approved contexts.
+     * This plugin only stores audit data about teachers/invigilators, which is
+     * not considered personal data owned by the user being exported. Therefore,
+     * no data is exported.
+     *
+     * @param approved_contextlist $contextlist Approved contexts for the user.
      * @return void
      */
     public static function export_user_data(approved_contextlist $contextlist)
     {
-        // Intentionally nothing – this is teacher/invigilator audit.
+        // Intentionally does nothing – this is teacher/invigilator audit data, not student data.
     }
 
     /**
-     * Delete all data for all users in a context.
+     * Delete all data for all users in a given context.
+     *
+     * This is typically called when a course module is deleted.
      *
      * @param \context $context The context being deleted.
      * @return void
@@ -124,6 +134,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             return;
         }
 
+        // Delete all log entries associated with this quiz.
         $quizid = $cm->instance;
         $DB->delete_records('quizaccess_oneconnection_log', ['quizid' => $quizid]);
     }
@@ -131,7 +142,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     /**
      * Delete data for a specific user in a list of contexts.
      *
-     * @param approved_contextlist $contextlist Approved contexts.
+     * @param approved_contextlist $contextlist Approved contexts for the user.
      * @return void
      */
     public static function delete_data_for_user(approved_contextlist $contextlist)
@@ -150,6 +161,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                 continue;
             }
 
+            // Delete log entries where this user was the one who unlocked an attempt.
             $quizid = $cm->instance;
             $DB->delete_records('quizaccess_oneconnection_log', [
                 'quizid' => $quizid,
@@ -159,7 +171,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     }
 
     /**
-     * Add users who have data in this context.
+     * Get a list of users who have data in the given context.
      *
      * @param userlist $userlist The userlist to populate.
      * @return void
@@ -178,8 +190,8 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             return;
         }
 
+        // Find all users who have unlocked an attempt in this quiz.
         $quizid = $cm->instance;
-
         $sql = "SELECT DISTINCT unlockedby
                   FROM {quizaccess_oneconnection_log}
                  WHERE quizid = :quizid";
@@ -191,7 +203,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
     /**
      * Delete data for multiple users in the given context.
      *
-     * @param approved_userlist $userlist The approved user list.
+     * @param approved_userlist $userlist The approved list of users whose data should be deleted.
      * @return void
      */
     public static function delete_data_for_users(approved_userlist $userlist)
@@ -211,6 +223,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         $quizid = $cm->instance;
         $userids = $userlist->get_userids();
 
+        // Build a query to delete log entries for the specified users in this quiz.
         list($insql, $inparams) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
         $params = ['quizid' => $quizid] + $inparams;
 

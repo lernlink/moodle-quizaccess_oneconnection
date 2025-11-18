@@ -41,22 +41,19 @@ use core_user;
  * Export the Allow connections table as CSV or Excel.
  *
  * @param string   $download 'csv' or 'excel'.
- * @param string   $sql      Full SQL (SELECT ... FROM ... ORDER BY ...).
- * @param array    $params   SQL params.
- * @param stdClass $quiz     Quiz record (for filename).
- * @return void
+ * @param string   $sql      Full SQL query (SELECT ... FROM ... ORDER BY ...).
+ * @param array    $params   Parameters for the SQL query.
+ * @param stdClass $quiz     The quiz record (used for the filename).
+ * @return void              This function exits after sending the file.
  */
 function quizaccess_oneconnection_export_table(string $download, string $sql, array $params, stdClass $quiz): void
 {
     global $DB;
 
-    // No extension here – core\dataformat will add it for Excel,
-    // and we add it manually for CSV.
+    // The file extension will be added automatically by the export library.
     $filename = clean_filename($quiz->name . '_allowconnections_' . userdate(time(), '%Y%m%d-%H%M'));
 
-    // -----------------------------------------------------------------
-    // Excel export: real .xlsx via core\dataformat.
-    // -----------------------------------------------------------------
+    // Excel export using the core dataformat API.
     if ($download === 'excel') {
         $columns = [
             'fullname' => get_string('firstname') . ' ' . get_string('lastname'),
@@ -66,14 +63,13 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
             'changeallowed' => get_string('changeallowed', 'quizaccess_oneconnection'),
         ];
 
-        // Build an in-memory iterable of rows with the exact column keys.
+        // Build an in-memory iterable of rows for the exporter.
         $data = [];
-
         $rs = $DB->get_recordset_sql($sql, $params);
         foreach ($rs as $r) {
             $canunlocknow = !empty($r->attemptid) && ($r->state === 'inprogress' || $r->state === 'overdue');
 
-            // Status text.
+            // Format status text.
             switch ($r->state) {
                 case 'notstarted':
                     $statetext = get_string('state_notstarted', 'quizaccess_oneconnection');
@@ -97,16 +93,14 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
                     $statetext = $r->state ?? '';
             }
 
-            // "Change in connection" column (plain text).
+            // Format "Change in connection" text.
             if ($canunlocknow) {
                 $changeinconnection = get_string('allowchange', 'quizaccess_oneconnection');
-            } else if (!empty($r->attemptid)) {
-                $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
             } else {
                 $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
             }
 
-            // "Change allowed" column from log table (if any).
+            // Format "Change allowed" text from log data.
             $changeallowed = '';
             if (!empty($r->unlockedby) && !empty($r->timeunlocked)) {
                 $unlockuser = core_user::get_user(
@@ -120,7 +114,7 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
                 $changeallowed = get_string('allowedbyon', 'quizaccess_oneconnection', $a);
             }
 
-            // Full name (respecting name fields).
+            // Format full name respecting Moodle's name display settings.
             $userforfullname = (object) [
                 'id' => $r->userid,
                 'firstname' => $r->firstname,
@@ -132,26 +126,22 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
             ];
             $fullname = fullname($userforfullname);
 
+            // Build the final row object.
             $row = new stdClass();
             $row->fullname = $fullname;
             $row->email = $r->email;
             $row->status = $statetext;
             $row->changeinconnection = $changeinconnection;
             $row->changeallowed = $changeallowed;
-
             $data[] = $row;
         }
         $rs->close();
 
-        // Correct argument order:
-        // (filename, dataformat, columns, iterable-of-records).
         \core\dataformat::download_data($filename, 'excel', $columns, $data);
         exit;
     }
 
-    // -----------------------------------------------------------------
-    // CSV export: same as before (streamed text CSV).
-    // -----------------------------------------------------------------
+    // CSV export (streamed).
     $mimetype = 'text/csv';
     $extension = '.csv';
     $delimiter = ',';
@@ -163,7 +153,7 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
 
     $out = fopen('php://output', 'w');
 
-    // Header row (no selection column).
+    // Header row.
     $headers = [
         get_string('firstname') . ' ' . get_string('lastname'),
         get_string('email'),
@@ -173,6 +163,7 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
     ];
     fputcsv($out, $headers, $delimiter);
 
+    // Data rows.
     $rs = $DB->get_recordset_sql($sql, $params);
     foreach ($rs as $r) {
         $canunlocknow = !empty($r->attemptid) && ($r->state === 'inprogress' || $r->state === 'overdue');
@@ -201,16 +192,14 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
                 $statetext = $r->state ?? '';
         }
 
-        // "Change in connection" column.
+        // "Change in connection" text.
         if ($canunlocknow) {
             $changeinconnection = get_string('allowchange', 'quizaccess_oneconnection');
-        } else if (!empty($r->attemptid)) {
-            $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
         } else {
             $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
         }
 
-        // "Change allowed" column from log table (if any).
+        // "Change allowed" text.
         $changeallowed = '';
         if (!empty($r->unlockedby) && !empty($r->timeunlocked)) {
             $unlockuser = core_user::get_user(
@@ -253,27 +242,23 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
 
 $id = required_param('id', PARAM_INT); // Course module ID.
 
-// Filters (like quiz report).
-$attemptsfrom = optional_param('attemptsfrom', 'enrolledattempts', PARAM_ALPHA); // enrolledattempts | enrollednoattempts | enrolledall | allattempts.
+// Get filters from URL parameters.
+$attemptsfrom = optional_param('attemptsfrom', 'enrolledattempts', PARAM_ALPHA);
 $pagesize = optional_param('pagesize', 30, PARAM_INT);
 $firstnameinitial = optional_param('tifirst', '', PARAM_ALPHA);
 $lastnameinitial = optional_param('tilast', '', PARAM_ALPHA);
+$sort = optional_param('sort', 'firstname', PARAM_ALPHA);
+$dir = optional_param('dir', 'ASC', PARAM_ALPHA);
+$download = optional_param('download', '', PARAM_ALPHA);
+$attemptstate = optional_param_array('attemptstate', null, PARAM_BOOL);
 
-// If the user clicked "Reset table preferences", also clear initials.
+// If the user clicked "Reset table preferences", clear the initials filters.
 if (optional_param('treset', 0, PARAM_BOOL)) {
     $firstnameinitial = '';
     $lastnameinitial = '';
 }
 
-// Sorting (preserve and honour flexible_table 'sort' & 'dir' params).
-$sort = optional_param('sort', 'firstname', PARAM_ALPHA); // 'firstname' default.
-$dir = optional_param('dir', 'ASC', PARAM_ALPHA);
-
-// Download type (empty string = normal HTML output).
-$download = optional_param('download', '', PARAM_ALPHA);
-
-// Attempt state checkboxes. If none are present in the URL we use the default (all on).
-$attemptstate = optional_param_array('attemptstate', null, PARAM_BOOL);
+// If no attempt state filters are provided, default to all states checked.
 if ($attemptstate === null) {
     $attemptstate = [
         'notstarted' => 1,
@@ -285,38 +270,36 @@ if ($attemptstate === null) {
     ];
 }
 
-// Basic quiz/course setup.
+// Load core Moodle objects.
 $cm = get_coursemodule_from_id('quiz', $id, 0, false, MUST_EXIST);
 $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
-
-require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
-require_capability('quizaccess/oneconnection:allowchange', $context);
-
-// We need the course context to detect roles that can preview (not students).
 $coursecontext = context_course::instance($course->id);
 
-$PAGE->set_url('/mod/quiz/accessrule/oneconnection/allowconnections.php', [
-    'id' => $id,
-]);
+// Check login and capabilities.
+require_login($course, false, $cm);
+require_capability('quizaccess/oneconnection:allowchange', $context);
+
+// Setup the page.
+$PAGE->set_url('/mod/quiz/accessrule/oneconnection/allowconnections.php', ['id' => $id]);
 $PAGE->set_title($quiz->name);
 $PAGE->set_heading($course->fullname);
 $PAGE->set_pagelayout('report');
 
-// Handle single-row unlock.
+// Handle single-row unlock action.
 $action = optional_param('action', '', PARAM_ALPHA);
 if ($action === 'unlock' && confirm_sesskey()) {
     $attemptid = required_param('attemptid', PARAM_INT);
     $unlocked = false;
 
-    // Only unlock attempts that are in progress or overdue.
+    // Only unlock attempts that are 'inprogress' or 'overdue'.
     $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid], 'id,userid,state', IGNORE_MISSING);
     if ($attempt && ($attempt->state === 'inprogress' || $attempt->state === 'overdue')) {
-        // Delete session binding.
+        // 1. Delete the session binding to unlock it.
         $DB->delete_records('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
 
-        // Log the action (if the table exists).
+        // 2. Log the action.
         $log = (object) [
             'quizid' => $quiz->id,
             'attemptid' => $attemptid,
@@ -326,10 +309,10 @@ if ($action === 'unlock' && confirm_sesskey()) {
         try {
             $DB->insert_record('quizaccess_oneconnection_log', $log);
         } catch (dml_exception $e) {
-            // For older sites where the log table is not yet present, we simply continue.
+            // Fails silently if the log table doesn't exist (e.g., on older plugin versions).
         }
 
-        // Fire the event so logstores receive the action.
+        // 3. Fire an event.
         $event = \quizaccess_oneconnection\event\attempt_unlocked::create([
             'objectid' => $attemptid,
             'relateduserid' => $attempt->userid ?? 0,
@@ -341,7 +324,7 @@ if ($action === 'unlock' && confirm_sesskey()) {
         $unlocked = true;
     }
 
-    // Redirect back (keep filters).
+    // Redirect back to the report, preserving all filters.
     $backurl = new moodle_url($PAGE->url, [
         'id' => $id,
         'attemptsfrom' => $attemptsfrom,
@@ -358,7 +341,6 @@ if ($action === 'unlock' && confirm_sesskey()) {
     }
 
     if ($unlocked) {
-        // Nice green success alert after redirect.
         redirect(
             $backurl,
             get_string('unlocksuccess', 'quizaccess_oneconnection', 1),
@@ -370,7 +352,7 @@ if ($action === 'unlock' && confirm_sesskey()) {
     }
 }
 
-// Build the filter form.
+// Instantiate the filter form.
 $customdata = [
     'cmid' => $cm->id,
     'attemptsfrom' => $attemptsfrom,
@@ -379,7 +361,7 @@ $customdata = [
 ];
 $mform = new \quizaccess_oneconnection\form\allowconnections_settings_form(null, $customdata);
 
-// If the form is submitted, redirect to the same page with clean params (GET).
+// If the filter form is submitted, redirect to a clean GET URL with the new parameters.
 if (!$download) {
     if ($mform->is_cancelled()) {
         redirect(new moodle_url('/mod/quiz/view.php', ['id' => $cm->id]));
@@ -403,7 +385,7 @@ if (!$download) {
     }
 }
 
-// Normalize attemptstate for filtering later (1/0).
+// Normalize attempt state values (1/0) for use in SQL queries.
 $normalizedattemptstate = [
     'notstarted' => empty($attemptstate['notstarted']) ? 0 : 1,
     'inprogress' => empty($attemptstate['inprogress']) ? 0 : 1,
@@ -413,7 +395,7 @@ $normalizedattemptstate = [
     'abandoned' => empty($attemptstate['abandoned']) ? 0 : 1,
 ];
 
-// Handle POST (unlock selected)
+// Handle bulk unlock action (from checkboxes).
 if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
     $selected = optional_param_array('attemptid', [], PARAM_INT);
     $unlockedcount = 0;
@@ -426,8 +408,10 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
                 continue;
             }
 
+            // 1. Unlock.
             $DB->delete_records('quizaccess_oneconnection_sess', ['attemptid' => $attemptid]);
 
+            // 2. Log.
             $log = (object) [
                 'quizid' => $quiz->id,
                 'attemptid' => $attemptid,
@@ -437,10 +421,10 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
             try {
                 $DB->insert_record('quizaccess_oneconnection_log', $log);
             } catch (dml_exception $e) {
-                // Silently continue if the log table is not available.
+                // Fails silently if log table is missing.
             }
 
-            // Fire event per attempt.
+            // 3. Fire event.
             $event = \quizaccess_oneconnection\event\attempt_unlocked::create([
                 'objectid' => $attemptid,
                 'relateduserid' => $attempt->userid ?? 0,
@@ -453,7 +437,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
         }
     }
 
-    // Preserve filters / initials / attemptstate on bulk unlock too.
+    // Redirect back, preserving filters.
     $backurl = new moodle_url($PAGE->url, [
         'id' => $id,
         'attemptsfrom' => $attemptsfrom,
@@ -481,7 +465,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
     }
 }
 
-// Build base URL for table links (sort, initials, paging).
+// Build the base URL for table controls (sorting, paging, initials).
 $baseurl = new moodle_url($PAGE->url, [
     'id' => $id,
     'attemptsfrom' => $attemptsfrom,
@@ -500,7 +484,7 @@ foreach ($normalizedattemptstate as $k => $v) {
 // Sorting direction sanitization.
 $dir = strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC';
 
-// Build state filter SQL (for attempts).
+// Build SQL clause for filtering by attempt state.
 $statelikes = [];
 if ($normalizedattemptstate['notstarted']) {
     $statelikes[] = "qa.state = 'notstarted'";
@@ -525,7 +509,7 @@ if (!empty($statelikes)) {
     $statewhere = '(' . implode(' OR ', $statelikes) . ')';
 }
 
-// Latest unlock per attempt – used for the "change allowed" column.
+// Subquery to get only the latest unlock log entry for each attempt.
 $latestunlockjoin = "
     LEFT JOIN (
         SELECT ql1.*
@@ -539,15 +523,10 @@ $latestunlockjoin = "
     ) qlog ON qlog.attemptid = qa.id
 ";
 
-// Start WHERE list.
 $wheres = ["u.deleted = 0"];
+$params = ['quizid' => $quiz->id];
 
-// Build params per branch.
-$params = [
-    'quizid' => $quiz->id,
-];
-
-// Branch: build joins + where + params.
+// Build different JOINs and WHERE clauses based on the 'attemptsfrom' filter.
 switch ($attemptsfrom) {
     case 'enrollednoattempts':
         // Enrolled students only, with NO attempts.
@@ -558,13 +537,12 @@ switch ($attemptsfrom) {
                        AND rc.capability = :capquizpreview
                        AND rc.permission = " . (int) CAP_ALLOW . "
                   LEFT JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
-        $wheres[] = "rc.id IS NULL";     // Exclude teachers / managers that can preview.
-        $wheres[] = "qa.id IS NULL";     // Keep only users without attempts.
+        $wheres[] = "rc.id IS NULL"; // Exclude users who can preview (teachers).
+        $wheres[] = "qa.id IS NULL"; // Only users without attempts.
         $params['courseid'] = $course->id;
         $params['coursectxid'] = $coursecontext->id;
         $params['capquizpreview'] = 'mod/quiz:preview';
         break;
-
     case 'enrolledall':
         // Enrolled students only, attempts or not.
         $joins = "JOIN {user_enrolments} ue ON ue.userid = u.id
@@ -574,7 +552,7 @@ switch ($attemptsfrom) {
                        AND rc.capability = :capquizpreview
                        AND rc.permission = " . (int) CAP_ALLOW . "
                   LEFT JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
-        $wheres[] = "rc.id IS NULL";     // Students only.
+        $wheres[] = "rc.id IS NULL";
         if ($statewhere !== '') {
             $wheres[] = "(qa.id IS NULL OR $statewhere)";
         }
@@ -582,7 +560,6 @@ switch ($attemptsfrom) {
         $params['coursectxid'] = $coursecontext->id;
         $params['capquizpreview'] = 'mod/quiz:preview';
         break;
-
     case 'allattempts':
         // All attempts for this quiz (do not restrict by role).
         $joins = "JOIN {quiz_attempts} qa ON qa.userid = u.id AND qa.quiz = :quizid";
@@ -590,7 +567,6 @@ switch ($attemptsfrom) {
             $wheres[] = $statewhere;
         }
         break;
-
     case 'enrolledattempts':
     default:
         // Enrolled students only, with attempts.
@@ -611,7 +587,7 @@ switch ($attemptsfrom) {
         break;
 }
 
-// Initials filtering.
+// Add initials filters.
 if ($firstnameinitial !== '') {
     $wheres[] = $DB->sql_like('u.firstname', ':tifirst', false, false);
     $params['tifirst'] = $firstnameinitial . '%';
@@ -651,12 +627,10 @@ $selectfields = "SELECT
                     qlog.timeunlocked
                ";
 
-// If a download is requested, build ORDER BY based on 'sort' & 'dir',
-// export and exit *before* rendering the HTML table.
+// If a download is requested, perform the export and exit immediately.
 if (!empty($download)) {
     $orderby = [];
     $sortdirection = (strtoupper($dir) === 'DESC') ? 'DESC' : 'ASC';
-
     switch ($sort) {
         case 'lastname':
             $orderby[] = "u.lastname $sortdirection, u.firstname $sortdirection";
@@ -698,11 +672,7 @@ if (!empty($download)) {
     // Never returns.
 }
 
-// -----------------------------
-// Normal HTML table continues.
-// -----------------------------
-
-// Output starts (HTML only, not for downloads).
+// Render the HTML Page.
 echo $OUTPUT->header();
 
 // 1) Tertiary navigation like quiz Results.
@@ -734,11 +704,10 @@ $mform->display();
 
 echo html_writer::tag('h3', get_string('allowchangesinconnection', 'quizaccess_oneconnection'), ['class' => 'mb-3']);
 
-// --- START OF INITIALS BAR SECTION ---
-
+// Render the initials bars for filtering by name.
 $letters = range('A', 'Z');
 
-// First name initials bar.
+// First name.
 echo html_writer::start_div('initialbar firstinitial d-flex flex-wrap justify-content-center justify-content-md-start mb-2');
 echo html_writer::tag('span', get_string('firstname'), ['class' => 'initialbarlabel me-2']);
 echo html_writer::start_tag('nav', ['class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start']);
@@ -796,9 +765,7 @@ echo html_writer::end_tag('ul');
 echo html_writer::end_tag('nav');
 echo html_writer::end_div();
 
-// --- END OF INITIALS BAR SECTION ---
-
-// Export buttons.
+// Render export buttons.
 echo html_writer::start_div('initialbar-export mb-3 mt-2');
 echo quizaccess_oneconnection_download_dataformat_selector(
     get_string('downloadas', 'table'),
@@ -808,7 +775,7 @@ echo quizaccess_oneconnection_download_dataformat_selector(
 );
 echo html_writer::end_div();
 
-// Prepare table.
+// Prepare and setup the flexible_table.
 $table = new flexible_table('quizaccess-oneconnection-allowconnections-' . $cm->id);
 
 $table->define_baseurl($baseurl);
@@ -832,7 +799,7 @@ $table->sortable(true, 'firstname', SORT_ASC);
 $table->no_sorting('select');
 $table->set_attribute('class', 'flexible table table-striped table-hover generaltable quizaccess-oneconnection-table');
 
-// Count total with subquery (to avoid duplicate rows from joins).
+// Get total count for pagination.
 $countsql = "SELECT COUNT(1)
                FROM (
                     SELECT DISTINCT COALESCE(qa.id, -u.id) AS uniqueid
@@ -843,7 +810,7 @@ $total = $DB->count_records_sql($countsql, $params);
 $table->pagesize($pagesize, $total);
 $table->setup();
 
-// Fetch data for current page.
+// Get the data for the current page.
 $offset = $table->get_page_start();
 $perpage = $table->get_page_size();
 

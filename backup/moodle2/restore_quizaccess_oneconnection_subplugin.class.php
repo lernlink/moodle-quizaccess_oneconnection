@@ -29,6 +29,10 @@ require_once($CFG->dirroot . '/mod/quiz/backup/moodle2/restore_mod_quiz_access_s
 
 /**
  * Provides the information to restore the oneconnection quiz access plugin.
+ *
+ * This class handles reading the plugin's data from the backup XML and
+ * inserting it into the database during a course restore.
+ * @package quizaccess_oneconnection
  */
 class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access_subplugin
 {
@@ -36,7 +40,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
     /**
      * Describe the XML paths that store the subplugin's data.
      *
-     * @return array
+     * @return array of restore_path_element
      */
     protected function define_quiz_subplugin_structure()
     {
@@ -47,7 +51,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
     }
 
     /**
-     * Restore the main plugin setting.
+     * Process the main plugin setting from the backup file and restore it.
      *
      * @param array $data Data read from the XML file.
      * @return void
@@ -62,7 +66,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
     }
 
     /**
-     * Restore a single audit log entry.
+     * Process a single audit log entry from the backup file and restore it.
      *
      * @param array $data Data read from the XML file.
      * @return void
@@ -70,10 +74,13 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
     public function process_log($data): void
     {
         global $DB;
+
         $data = (object) $data;
+        // Map old IDs to new IDs in the restored course.
         $data->quizid = $this->get_new_parentid('quiz');
         $data->attemptid = $this->get_mappingid('quiz_attempt', $data->attemptid);
         $data->unlockedby = $this->get_mappingid('user', $data->unlockedby);
+
         $DB->insert_record('quizaccess_oneconnection_log', $data);
     }
 }

@@ -32,13 +32,16 @@ use core\event\base;
  *
  * These observers remove the stored session fingerprint when an attempt
  * is no longer active (finished, abandoned, submitted or deleted).
+ * @package quizaccess_oneconnection
  */
 class observers
 {
 
     /**
-     * Remove unneeded session information when the attempt is finished, abandoned,
-     * submitted or deleted.
+     * Remove unneeded session information when an attempt is no longer active.
+     *
+     * This is triggered when an attempt is finished, abandoned, submitted, or deleted,
+     * effectively releasing the session lock.
      *
      * @param base $event The event object.
      * @return void

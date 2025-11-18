@@ -35,9 +35,9 @@ use core\plugin_manager;
  *
  * This is the standard navigation hook for quiz sub-plugins.
  *
- * @param navigation_node $morenode The parent "more" node.
+ * @param navigation_node $morenode The parent "more" node where items are added.
  * @param stdClass $quiz The quiz activity record.
- * @param stdClass $cm The course module.
+ * @param stdClass $cm The course module record for the quiz.
  * @param stdClass $course The course record.
  * @return void
  */
@@ -48,7 +48,7 @@ function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, s
         return;
     }
 
-    // Only show the link if the rule is enabled on this quiz.
+    // Only show the link if the rule is enabled for this specific quiz.
     if (empty($quiz->oneconnectionenabled)) {
         return;
     }
@@ -66,13 +66,16 @@ function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, s
 
 
 /**
- * Returns a dataformat selection and download form
+ * Returns a dataformat selection and download form.
  *
- * @param string $label A text label
- * @param moodle_url|string $base The download page url
- * @param string $name The query param which will hold the type of the download
- * @param array $params Extra params sent to the download page
- * @return string HTML fragment
+ * This function renders a simple form with a dropdown for selecting a data format
+ * (like CSV or Excel) and a download button.
+ *
+ * @param string $label A text label for the form (e.g., "Download as").
+ * @param moodle_url|string $base The URL of the page that will handle the download request.
+ * @param string $name The name of the query parameter that will hold the selected data format type.
+ * @param array $params Extra hidden parameters to include in the form submission.
+ * @return string The rendered HTML for the form.
  */
 function quizaccess_oneconnection_download_dataformat_selector($label, $base, $name = 'dataformat', $params = [])
 {
@@ -80,6 +83,8 @@ function quizaccess_oneconnection_download_dataformat_selector($label, $base, $n
 
     $formats = plugin_manager::instance()->get_plugins_of_type('dataformat');
     $options = [];
+
+    // Only offer CSV and Excel as download options.
     foreach ($formats as $format) {
         if ($format->is_enabled() && in_array($format->name, ['csv', 'excel'])) {
             $options[] = [
@@ -95,6 +100,8 @@ function quizaccess_oneconnection_download_dataformat_selector($label, $base, $n
             'value' => $value,
         ];
     }
+
+    // Data to be passed to the template.
     $data = [
         'label' => $label,
         'base' => $base,

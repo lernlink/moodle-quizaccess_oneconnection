@@ -1,4 +1,12 @@
+/**
+ * These styles are used to hide elements on the quiz preflight check page
+ * when an attempt is blocked by this access rule.
+ *
+ * @package    quizaccess_oneconnection
+ * @copyright  2016 Vadim Dvorovenko
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 #page-mod-quiz-view .errorcode,
 #page-mod-quiz-attempt .errorcode {
     display: none;
-} 
+}

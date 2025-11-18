@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
 
-    // General section.
+    // General section heading.
     $settings->add(
         new admin_setting_heading(
             'quizaccess_oneconnection/heading',
@@ -36,7 +36,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
-    // Whether the rule should be pre-enabled for new quizzes.
+    // Setting to control whether the rule is enabled by default for new quizzes.
     $settings->add(
         new admin_setting_configcheckbox(
             'quizaccess_oneconnection/defaultenabled',
@@ -46,7 +46,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
-    // Advanced section.
+    // Advanced section heading.
     $settings->add(
         new admin_setting_heading(
             'quizaccess_oneconnection/headingadvanced',
@@ -55,7 +55,7 @@ if ($ADMIN->fulltree) {
         )
     );
 
-    // List of subnets that should not be used when calculating the session fingerprint.
+    // Setting for a list of IP subnets to be ignored during session validation.
     $settings->add(
         new admin_setting_configtextarea(
             'quizaccess_oneconnection/whitelist',

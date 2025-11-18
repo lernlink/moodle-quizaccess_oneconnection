@@ -31,7 +31,8 @@ use core\event\base;
 use moodle_url;
 
 /**
- * Attempt blocked event.
+ * Event class for when a quiz attempt is blocked due to a session mismatch.
+ * @package quizaccess_oneconnection\event
  */
 class attempt_blocked extends base
 {
@@ -39,12 +40,14 @@ class attempt_blocked extends base
     /**
      * Initialises the event data.
      *
+     * Sets the database table, action (CRUD type), and educational level.
+     *
      * @return void
      */
     protected function init(): void
     {
         $this->data['objecttable'] = 'quiz_attempts';
-        $this->data['crud'] = 'r';
+        $this->data['crud'] = 'r'; // 'r' for read, as it's an access attempt.
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
     }
 
@@ -59,7 +62,7 @@ class attempt_blocked extends base
     }
 
     /**
-     * Returns description of what happened.
+     * Returns a human-readable description of what happened.
      *
      * @return string
      */
@@ -70,7 +73,7 @@ class attempt_blocked extends base
     }
 
     /**
-     * Get URL related to the action.
+     * Get a URL related to this event.
      *
      * @return moodle_url
      */
@@ -80,7 +83,7 @@ class attempt_blocked extends base
     }
 
     /**
-     * Custom validation.
+     * Custom validation to ensure necessary data is present.
      *
      * @throws coding_exception
      * @return void
@@ -99,7 +102,7 @@ class attempt_blocked extends base
     }
 
     /**
-     * Mapping for objectid during restore.
+     * Provides mapping for the objectid during course restore.
      *
      * @return array|string
      */
@@ -109,7 +112,7 @@ class attempt_blocked extends base
     }
 
     /**
-     * Mapping for additional data during restore.
+     * Provides mapping for additional 'other' data during course restore.
      *
      * @return array
      */
