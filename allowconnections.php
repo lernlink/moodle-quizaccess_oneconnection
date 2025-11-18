@@ -33,6 +33,7 @@ require(__DIR__ . '/../../../../config.php');
 
 require_once($CFG->libdir . '/tablelib.php');
 require_once($CFG->dirroot . '/mod/quiz/accessrule/oneconnection/classes/form/allowconnections_settings_form.php');
+require_once($CFG->dirroot . '/mod/quiz/accessrule/oneconnection/lib.php');
 
 use core_user;
 
@@ -731,6 +732,8 @@ if ($stringman->string_exists('statistics', 'quiz')) {
 // Filter form.
 $mform->display();
 
+echo html_writer::tag('h3', get_string('allowchangesinconnection', 'quizaccess_oneconnection'), ['class' => 'mb-3']);
+
 // --- START OF INITIALS BAR SECTION ---
 
 $letters = range('A', 'Z');
@@ -796,19 +799,12 @@ echo html_writer::end_div();
 // --- END OF INITIALS BAR SECTION ---
 
 // Export buttons.
-$downloadcsvurl = new moodle_url($baseurl, ['download' => 'csv']);
-$downloadexcelurl = new moodle_url($baseurl, ['download' => 'excel']);
-
 echo html_writer::start_div('initialbar-export mb-3 mt-2');
-echo html_writer::link(
-    $downloadcsvurl,
-    get_string('downloadcsv', 'quizaccess_oneconnection'),
-    ['class' => 'btn btn-secondary me-2']
-);
-echo html_writer::link(
-    $downloadexcelurl,
-    get_string('downloadexcel', 'quizaccess_oneconnection'),
-    ['class' => 'btn btn-secondary']
+echo quizaccess_oneconnection_download_dataformat_selector(
+    get_string('downloadas', 'table'),
+    $PAGE->url,
+    'download',
+    $baseurl->params()
 );
 echo html_writer::end_div();
 

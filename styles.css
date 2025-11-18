@@ -1,0 +1,4 @@
+#page-mod-quiz-view .errorcode,
+#page-mod-quiz-attempt .errorcode {
+    display: none;
+} 

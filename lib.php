@@ -28,6 +28,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use core\output\pix_icon;
+use core\plugin_manager;
 
 /**
  * Extends the quiz "More" / secondary menu with the 'Allow connection changes' link.
@@ -61,4 +62,48 @@ function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, s
         null,
         new pix_icon('i/unlock', '')
     );
+}
+
+
+/**
+ * Returns a dataformat selection and download form
+ *
+ * @param string $label A text label
+ * @param moodle_url|string $base The download page url
+ * @param string $name The query param which will hold the type of the download
+ * @param array $params Extra params sent to the download page
+ * @return string HTML fragment
+ */
+function quizaccess_oneconnection_download_dataformat_selector($label, $base, $name = 'dataformat', $params = [])
+{
+    global $OUTPUT;
+
+    $formats = plugin_manager::instance()->get_plugins_of_type('dataformat');
+    $options = [];
+    foreach ($formats as $format) {
+        if ($format->is_enabled() && in_array($format->name, ['csv', 'excel'])) {
+            $options[] = [
+                'value' => $format->name,
+                'label' => get_string('dataformat', $format->component),
+            ];
+        }
+    }
+    $hiddenparams = [];
+    foreach ($params as $key => $value) {
+        $hiddenparams[] = [
+            'name' => $key,
+            'value' => $value,
+        ];
+    }
+    $data = [
+        'label' => $label,
+        'base' => $base,
+        'name' => $name,
+        'params' => $hiddenparams,
+        'options' => $options,
+        'sesskey' => sesskey(),
+        'submit' => get_string('download'),
+    ];
+
+    return $OUTPUT->render_from_template('core/dataformat_selector', $data);
 }

@@ -404,22 +404,32 @@ class quizaccess_oneconnection extends access_rule_base
             }
         }
 
-        if (!property_exists($quiz, 'oneconnectionenabled')) {
-            return;
+        // Determine the intended state. If the property is not set on the $quiz object,
+        // it means the checkbox was unchecked on the form.
+        $enabled = !empty($quiz->oneconnectionenabled) ? 1 : 0;
+
+        // Find out if a setting already exists for this quiz.
+        $existing = $DB->get_record('quizaccess_oneconnection', ['quizid' => $quiz->id]);
+
+        if ($existing) {
+            // A record already exists. Update its 'enabled' status if it has changed.
+            if ($existing->enabled != $enabled) {
+                $DB->set_field('quizaccess_oneconnection', 'enabled', $enabled, ['id' => $existing->id]);
+            }
+        } else {
+            // No record exists for this quiz. We must create one to store the setting,
+            // whether it's enabled (1) or disabled (0). This ensures the quiz-specific
+            // choice overrides any site-wide default.
+            $record = new stdClass();
+            $record->quizid = $quiz->id;
+            $record->enabled = $enabled;
+            $DB->insert_record('quizaccess_oneconnection', $record);
         }
 
-        if (empty($quiz->oneconnectionenabled)) {
-            // Rule disabled – remove all related records.
-            $DB->delete_records('quizaccess_oneconnection', ['quizid' => $quiz->id]);
+        // If the rule is being disabled, it's good practice to clean up any
+        // lingering session locks for this quiz.
+        if (!$enabled) {
             $DB->delete_records('quizaccess_oneconnection_sess', ['quizid' => $quiz->id]);
-        } else {
-            // Rule enabled – ensure there is a record.
-            if (!$DB->record_exists('quizaccess_oneconnection', ['quizid' => $quiz->id])) {
-                $record = new stdClass();
-                $record->quizid = $quiz->id;
-                $record->enabled = 1;
-                $DB->insert_record('quizaccess_oneconnection', $record);
-            }
         }
     }
 
