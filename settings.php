@@ -38,11 +38,11 @@ if ($ADMIN->fulltree) {
 
     // Setting to control whether the rule is enabled by default for new quizzes.
     $settings->add(
-        new admin_setting_configcheckbox(
+        new admin_setting_configcheckbox_with_advanced(
             'quizaccess_oneconnection/defaultenabled',
             get_string('oneconnection', 'quizaccess_oneconnection'),
-            '',
-            0
+            get_string('defaultenabled_desc', 'quizaccess_oneconnection'),
+            ['value' => 0, 'adv' => true]
         )
     );
 

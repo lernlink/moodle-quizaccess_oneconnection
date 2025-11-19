@@ -391,7 +391,8 @@ class quizaccess_oneconnection extends access_rule_base
         $canedit = has_capability('quizaccess/oneconnection:editenabled', $context);
 
         $pluginconfig = get_config('quizaccess_oneconnection') ?: (object) [];
-        $defaultenabled = isset($pluginconfig->defaultenabled) ? (int) $pluginconfig->defaultenabled : 0;
+        $defaultenabled = !empty($pluginconfig->defaultenabled);
+        $isadvanced = !empty($pluginconfig->defaultenabled_adv);
 
         // Add the checkbox to enable/disable the rule for this quiz.
         $mform->addElement('checkbox', 'oneconnectionenabled', get_string('oneconnection', 'quizaccess_oneconnection'));
@@ -401,6 +402,11 @@ class quizaccess_oneconnection extends access_rule_base
         if (!$canedit) {
             // If the user lacks the capability, show the setting but make it read-only.
             $mform->freeze('oneconnectionenabled');
+        }
+
+        // Set the 'advanced' property based on the admin setting.
+        if ($isadvanced) {
+            $mform->setAdvanced('oneconnectionenabled');
         }
     }
 
