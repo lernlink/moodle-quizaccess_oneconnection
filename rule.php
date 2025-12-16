@@ -401,6 +401,7 @@ class quizaccess_oneconnection extends access_rule_base
 
         if (!$canedit) {
             // If the user lacks the capability, show the setting but make it read-only.
+            // Frozen fields ARE submitted by Moodle forms with their default/set value.
             $mform->freeze('oneconnectionenabled');
         }
 
@@ -420,17 +421,11 @@ class quizaccess_oneconnection extends access_rule_base
     {
         global $DB;
 
-        // In some contexts (e.g., restore, CLI), there might not be a course module context.
-        $cm = get_coursemodule_from_instance('quiz', $quiz->id, $quiz->course, false, IGNORE_MISSING);
-        if ($cm) {
-            $context = \context_module::instance($cm->id, IGNORE_MISSING);
-            if ($context && !has_capability('quizaccess/oneconnection:editenabled', $context)) {
-                // User is not allowed to change this setting, so we do nothing.
-                return;
-            }
-        }
-
         // If 'oneconnectionenabled' is not set, it means the checkbox was unchecked.
+        // However, if the field was frozen (user has no capability), Moodle forms automatically
+        // passes the frozen value in $quiz->oneconnectionenabled.
+        // Therefore, we can rely on $quiz->oneconnectionenabled being correct even if the user
+        // did not have permission to edit it.
         $enabled = !empty($quiz->oneconnectionenabled) ? 1 : 0;
 
         $existing = $DB->get_record('quizaccess_oneconnection', ['quizid' => $quiz->id]);
@@ -441,7 +436,9 @@ class quizaccess_oneconnection extends access_rule_base
                 $DB->set_field('quizaccess_oneconnection', 'enabled', $enabled, ['id' => $existing->id]);
             }
         } else {
-            // No record exists. We create one to store the quiz-specific setting, overriding the site default.
+            // No record exists. We create one to store the quiz-specific setting.
+            // This path is essential when a new quiz is created by a user who cannot edit this setting
+            // (the field was frozen with the site default).
             $record = new stdClass();
             $record->quizid = $quiz->id;
             $record->enabled = $enabled;
