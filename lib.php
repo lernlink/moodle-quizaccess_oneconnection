@@ -21,7 +21,7 @@
  *
  * @package     quizaccess_oneconnection
  * @category    lib
- * @copyright   2024 onwards
+ * @copyright   2025 lern.link GmbH <team@lernlink.de>, Adrian Sarmas, Vadym Nersesov
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

@@ -21,6 +21,7 @@ use function PHPUnit\Framework\throwException;
  *
  * @package     quizaccess_oneconnection
  * @copyright   2016 Vadim Dvorovenko
+ * @copyright   2025 lern.link GmbH <team@lernlink.de>, Adrian Sarmas, Vadym Nersesov
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

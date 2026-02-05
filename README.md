@@ -1,87 +1,189 @@
 # Block Concurrent Sessions Quiz Access Rule
 
-[![Moodle Plugin CI](https://github.com/vadimonus/moodle-quizaccess_oneconnection/workflows/Moodle%20Plugin%20CI/badge.svg?branch=master)](https://github.com/vadimonus/moodle-quizaccess_oneconnection/actions?query=workflow%3A%22Moodle+Plugin+CI%22+branch%3Amaster)
+A Moodle quiz access rule plugin that prevents students from continuing a quiz attempt across multiple sessions or devices, ensuring exam integrity by blocking concurrent connections.
 
 ## Requirements
 
-*   **Moodle 5.0 (build 2025041400) or later.**
+*   **Moodle 5.0 or later**
+*   Tested and confirmed working with Moodle 5.0 and 5.1
 
 ## Installation
 
 1.  Copy the `oneconnection` folder into your Moodle's `mod/quiz/accessrule/` directory.
-2.  Log in to your Moodle site as an administrator and visit the **Site administration > Notifications** page to complete the installation.
+2.  Log in to your Moodle site as an administrator and visit **Site administration > Notifications** to complete the installation.
+3.  (Optional) Configure default settings at **Site administration > Plugins > Activity modules > Quiz > Quiz access rule: Block concurrent connections**.
+
+## Overview
+
+This plugin prevents students from accessing the same quiz attempt from multiple devices, browsers, or locations simultaneously. When a student starts a quiz attempt, their session information (Moodle session, user-agent, IP address) is securely recorded. Any subsequent attempt to access that same quiz from a different connection will be blocked.
+
+**Use cases:**
+- **Digital exams:** Prevents ghostwriting and unauthorized assistance during online exams
+- **Proctored assessments:** Ensures students remain on their original device throughout the test
+- **High-stakes testing:** Provides an additional security layer for important examinations
+
+## Features
+
+### Core Functionality
+- **Session binding:** Locks quiz attempts to the original device/browser session
+- **Multi-factor detection:** Validates Moodle session, user-agent, and IP address
+- **Secure hashing:** Uses SHA-256 with salt for session fingerprinting
+
+### Management & Monitoring
+- **Dedicated management page:** "Allow connection changes" page accessible from the Results tab
+- **Bulk actions:** Allow connection changes for multiple students simultaneously
+- **Advanced filtering:** Filter by enrolled users, attempt status, and user groups
+- **Sorting & pagination:** Sort by any column, use initials bar for quick navigation
+- **Comprehensive audit log:** All connection changes are permanently logged with timestamp and authorizing user
+- **Export functionality:** Export table data as CSV or Excel for external analysis
+
+### Access Control
+- **Fine-grained capabilities:**
+  - `quizaccess/oneconnection:allowchange` - Allow teachers to unlock attempts
+  - `quizaccess/oneconnection:editenabled` - Control who can enable/disable the rule in quiz settings
+- **Configurable defaults:** Set whether the rule is enabled by default for new quizzes
+
+### Localization
+- English and German translations included
+- Full AMOS translation toolkit support
 
 ## Usage
 
-This plugin prevents a student from continuing a single quiz attempt across multiple sessions. The first time a student accesses their quiz attempt, session information (Moodle session, user-agent, IP address) is recorded. Any subsequent attempt to access that same quiz attempt from another computer, device, or browser will be blocked.
+### For Quiz Creators / Teachers
 
-This is useful for preventing situations where someone helps a student by accessing the quiz with the student's credentials from another location.
+#### Enabling the Rule
+1.  Edit your quiz settings
+2.  Expand the **"Extra restrictions on attempts"** section
+3.  Check the box for **"Block concurrent connections"**
+4.  Save the quiz
 
-### For Course Creators (Editing Teachers)
+**Note:** If you don't see this option, you may need the `quizaccess/oneconnection:editenabled` capability.
 
-1.  In your quiz settings, expand the **"Extra restrictions on attempts"** section.
-2.  Check the box for **"Block concurrent connections"**. The rule is now active.
+#### Managing Connection Changes During Exams
 
-### For Exam Supervisors / Teachers
+When students need to switch devices (e.g., technical issues, computer restart, exam room change):
 
-If a student's computer breaks or they are accidentally blocked, a teacher can allow them to continue on a new device.
+1.  Navigate to the quiz
+2.  Click the **"Results"** tab
+3.  Select **"Allow connection changes"** from the dropdown menu
 
-1.  Navigate to the quiz.
-2.  Click the **"Results"** tab.
-3.  From the dropdown menu, select **"Allow connection changes"**.
-4.  On this page, you can:
-    *   **Unlock a single student:** Click the "Allow change" link in the student's row.
-    *   **Unlock multiple students:** Use the checkboxes and the "Allow change in connection for selected attempts" button at the bottom.
+On the management page you can:
 
-Every time a change is allowed, it is permanently logged and displayed on this page for auditing purposes.
+**Individual unlock:**
+- Click the **"Allow change"** link next to a student's name
 
-## Upgrade from 1.x
+**Bulk unlock:**
+- Check the boxes next to multiple students
+- Click **"Allow change in connection for selected attempts"** at the bottom
+- Useful for exam room technical issues affecting multiple students
 
-Due to changes in the hashing algorithm, when upgrading from version 1.x, all active quiz sessions will be unlocked. This is to ensure that students can safely continue their attempts immediately after the update. There is a small risk that someone could use the site update window to cheat on a quiz that was started before the update. If this is a concern, ensure all quiz attempts are completed before starting the site upgrade.
+**Filter and search:**
+- Use the **"Attempts from"** filter to show only enrolled users or those with active attempts
+- Use the **"Attempts that are"** filter to show specific attempt states (in progress, finished, etc.)
+- Click initials to quickly jump to students by last name
 
-## Author
+**Audit and export:**
+- View the **"Change allowed"** column to see who authorized changes and when
+- Export the current view as CSV or Excel for record-keeping
 
-*   **Vadim Dvorovenko** (Vadimon@mail.ru)
+**Important notes:**
+- Connection changes can only be allowed for attempts in "In progress" state
+- Changes can be granted proactively (before a student switches devices)
+- All unlock actions are permanently logged for compliance and auditing
+- When a change is allowed, the previous connection is blocked (only one active connection per attempt)
 
-## ETH Zürich Enhancements (Version 4.0+)
+### For Students
 
-New features including bulk actions, persistent audit logging, and role-based permissions were developed based on the specification by Marco Lehre, ID Educational IT Services, ETH Zürich.
+When the rule is active and you try to continue your quiz from a different device/browser, you'll see a message indicating the attempt is blocked. Contact your exam invigilator or teacher to request a connection change.
+
+## Configuration
+
+### Site-Level Settings
+
+Navigate to **Site administration > Plugins > Activity modules > Quiz > Quiz access rule: Block concurrent connections**
+
+- **Default enabled:** Check this to enable "Block concurrent connections" by default for all new quizzes
+
+### Capabilities
+
+Grant these capabilities to control plugin functionality:
+
+- **`quizaccess/oneconnection:allowchange`**  
+  Default: Manager, Teacher, Editing Teacher  
+  Allows users to unlock attempts and grant connection changes
+
+- **`quizaccess/oneconnection:editenabled`**  
+  Default: Manager, Editing Teacher  
+  Allows users to enable/disable the "Block concurrent connections" setting in quiz configuration
+
+## Privacy & Data
+
+This plugin stores:
+- **Session fingerprints** (hashed): Moodle session ID, user-agent, IP address
+- **Audit log records**: User ID, quiz attempt ID, timestamp, and authorizing user ID for each connection change
+
+Data is retained for the lifetime of the quiz attempt and is deleted when attempts are deleted. See the plugin's privacy provider for GDPR compliance details.
+
+## Acknowledgments
+
+### Original Author
+- **Vadim Dvorovenko** (2016)  
+  Created the original plugin concept and core functionality
+
+### Current Maintainers
+- **lern.link GmbH** (team@lernlink.de)
+- **Adrian Sarmas**
+- **Vadym Nersesov**
+
+### ETH Zürich Development
+Version 5.0+ features were developed based on specifications by **Marco Lehre**, ID Educational IT Services, ETH Zürich. ETH Zürich requested lern.link GmbH to maintain and extend this plugin with enhanced bulk management, comprehensive audit logging, role-based access control, and export functionality for digital examination scenarios.
 
 ## Links
 
-*   **Plugin Page:** https://moodle.org/plugins/view.php?plugin=quizaccess_oneconnection
-*   **Latest Code:** https://github.com/vadimonus/moodle-quizaccess_oneconnection
+*   **Plugin Page:** [moodle.org/plugins - to be created]
+*   **Latest Code:** [GitHub repository - to be created]
+*   **Issue Tracker:** [GitHub Issues - to be created]
 
-## Changes
+## Changelog
 
-**Release 4.0.3 (build 2025092603):**
-*   **MAJOR:** Added a "Allow connection changes" management page for teachers.
-*   **MAJOR:** Teachers can now unlock multiple students in a single bulk action.
-*   **MAJOR:** All unlock actions are now permanently logged for a clear audit trail.
-*   **FEATURE:** Added a new capability `quizaccess/oneconnection:editenabled` to restrict who can change the "Block concurrent connections" setting.
-*   **FEATURE:** Added German and Russian language translations.
-*   **IMPROVEMENT:** Moved the link to the "Results" tab dropdown for better usability.
-*   **FIX:** Updated the Privacy API and Backup/Restore API for Moodle 5.0 compatibility.
-*   **Requirement:** Moodle 5.0 is now the minimum required version.
+### Version 5.1.0 (build 2025121600) - December 2025
 
-**Release 2.0.1 (build 2024032400):**
-*   Changed unlock block title.
+**Major Features:**
+- Added comprehensive "Allow connection changes" management page
+- Bulk unlock actions for multiple students simultaneously
+- Advanced filtering options (by enrollment status, attempt state, user groups)
+- Persistent audit logging with full change history
+- CSV and Excel export functionality
+- Pagination, sorting, and initials bar for large courses
 
-**Release 2.0.0 (build 2024010802):**
-*   Removed support for versions prior to 4.2.
-*   Changed hash algorithm from md5 to sha256 with random salt.
+**Capabilities:**
+- New capability `quizaccess/oneconnection:editenabled` to control access to quiz setting
+- Enhanced `quizaccess/oneconnection:allowchange` for connection management
 
-**Release 1.2.1 (build 2022020600):**
-*   String fixes. Thanks to Luca Bösch.
+**Localization:**
+- Full German translation
+- AMOS translation toolkit support
 
-**Release 1.2 (build 2021010301):**
-*   Setting to exclude some networks from IP check. Thanks to Roberto Pinna.
+**Privacy & Compliance:**
+- Complete GDPR privacy provider implementation
+- Audit trail for all connection changes
+- Backup/Restore API support
 
-**Release 1.1 (build 2021010300):**
-*   Privacy provider implementation.
+**Technical:**
+- Minimum requirement: Moodle 5.0
+- Security: SHA-256 hashing with salt for session fingerprints
+- Database: New tables for audit logging
 
-**Release 1.0 (build 2016042800):**
-*   First stable version.
+**ETH Zürich Requirements Fulfilled:**
+1. ✅ Bulk action support for connection changes
+2. ✅ Visible change history for each attempt
+3. ✅ All GUI texts in AMOS translation toolkit
+4. ✅ Role-specific permission for editing quiz setting
 
-**Release 0.9 (build 2016042100):**
-*   Initial release.
+## License
+
+GNU GPL v3 or later
+
+## Support
+
+For issues, feature requests, or contributions, please use the GitHub issue tracker [link to be added].
