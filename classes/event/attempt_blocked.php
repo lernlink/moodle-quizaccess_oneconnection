@@ -47,7 +47,7 @@ class attempt_blocked extends base
      */
     protected function init(): void {
         $this->data['objecttable'] = 'quiz_attempts';
-        $this->data['crud'] = 'r'; // 'r' for read, as it's an access attempt.
+        $this->data['crud'] = 'r'; // Read 'r', as it's an access attempt.
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
     }
 

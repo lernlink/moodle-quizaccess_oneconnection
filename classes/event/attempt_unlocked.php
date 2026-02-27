@@ -46,7 +46,7 @@ class attempt_unlocked extends base
      */
     protected function init(): void {
         $this->data['objecttable'] = 'quiz_attempts';
-        $this->data['crud'] = 'u'; // 'u' for update, as the attempt state is being modified.
+        $this->data['crud'] = 'u'; // Update 'u', as the attempt state is being modified.
         $this->data['edulevel'] = self::LEVEL_TEACHING;
     }
 
