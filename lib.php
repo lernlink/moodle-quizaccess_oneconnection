@@ -38,7 +38,12 @@ use core\plugin_manager;
  * @param stdClass $course The course record.
  * @return void
  */
-function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void {
+function quizaccess_oneconnection_extend_navigation(
+    navigation_node $morenode,
+    stdClass $quiz,
+    stdClass $cm,
+    stdClass $course
+): void {
     $context = context_module::instance($cm->id);
     if (!has_capability('quizaccess/oneconnection:allowchange', $context)) {
         return;

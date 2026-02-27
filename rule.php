@@ -450,7 +450,7 @@ class quizaccess_oneconnection extends access_rule_base {
         return [
             'quizaccess_oneconnection.enabled oneconnectionenabled',
             'LEFT JOIN {quizaccess_oneconnection} quizaccess_oneconnection ON quizaccess_oneconnection.quizid = quiz.id',
-            []
+            [],
         ];
     }
 }

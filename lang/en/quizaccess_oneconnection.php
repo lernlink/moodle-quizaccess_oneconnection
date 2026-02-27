@@ -27,9 +27,9 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['allowchange'] = 'Allow change';
 $string['allowchangeinconnection'] = 'Allow connection change for selected attempts';
+$string['allowchangesinconnection'] = 'Allow changes in connection';
 $string['allowconnections'] = 'Allow connection changes';
 $string['allowedbyon'] = '{$a->time} (by {$a->fullname})';
-$string['allowchangesinconnection'] = 'Allow changes in connection';
 $string['anothersession'] = 'You are trying to access this quiz attempt from a different device or browser than the one you started with. If you need to switch connections, please contact the invigilator.';
 $string['attemptsfrom'] = 'Attempts from';
 $string['attemptsfrom_allattempts'] = 'All users who have a quiz attempt';
@@ -76,5 +76,3 @@ $string['unlocksuccess'] = 'Connection change allowed for {$a} attempt(s).';
 $string['whattoincludeinreport'] = 'What to include in the report';
 $string['whitelist'] = 'Networks without IP check';
 $string['whitelist_desc'] = 'This option is intended to lower false positives when users takes quizzes over mobile networks, where IP can be changed during quiz. It is not needed in most of situations. You can provide a comma separated list of subnets (e.g. 88.0.0.0/8, 77.77.0.0/16). If an IP address is in such a network, it\'s not checked. To totally disable the IP check, you can set the value to 0.0.0.0/0.';
-$string['downloadcsv'] = 'Export table as CSV';
-$string['downloadexcel'] = 'Export table as Excel';

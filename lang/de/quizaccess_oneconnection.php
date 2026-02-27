@@ -27,9 +27,9 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['allowchange'] = 'Wechsel erlauben';
 $string['allowchangeinconnection'] = 'Verbindungswechsel für ausgewählte Versuche erlauben';
+$string['allowchangesinconnection'] = 'Verbindungswechsel zulassen';
 $string['allowconnections'] = 'Verbindungswechsel erlauben';
 $string['allowedbyon'] = '{$a->time} (Erlaubt von {$a->fullname})';
-$string['allowchangesinconnection'] = 'Verbindungswechsel zulassen';
 $string['anothersession'] = 'Sie versuchen, von einem anderen Gerät oder Browser aus auf diesen Testversuch zuzugreifen als dem, mit dem Sie begonnen haben. Wenden Sie sich an die Prüfungsaufsicht, wenn Sie die Verbindung erneuern müssen.';
 $string['attemptsfrom'] = 'Versuche von';
 $string['attemptsfrom_allattempts'] = 'Alle Nutzer/innen mit Testversuch';

@@ -23,7 +23,6 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Upgrade routine for quizaccess_oneconnection.
@@ -31,8 +30,7 @@ defined('MOODLE_INTERNAL') || die();
  * @param int $oldversion The version of the plugin that is currently installed.
  * @return bool True on success.
  */
-function xmldb_quizaccess_oneconnection_upgrade($oldversion)
-{
+function xmldb_quizaccess_oneconnection_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
 
@@ -72,7 +70,12 @@ function xmldb_quizaccess_oneconnection_upgrade($oldversion)
 
         // Rename the old capability for a smoother upgrade.
         if ($DB->record_exists('capabilities', ['name' => 'quizaccess/oneconnection:unlockattempt'])) {
-            $DB->set_field('capabilities', 'name', 'quizaccess/oneconnection:allowchange', ['name' => 'quizaccess/oneconnection:unlockattempt']);
+            $DB->set_field(
+                'capabilities',
+                'name',
+                'quizaccess/oneconnection:allowchange',
+                ['name' => 'quizaccess/oneconnection:unlockattempt']
+            );
         }
 
         upgrade_plugin_savepoint(true, 2025092600, 'quizaccess', 'oneconnection');
