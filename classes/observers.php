@@ -47,8 +47,7 @@ class observers
      * @param base $event The event object.
      * @return void
      */
-    public static function unlock_attempt(base $event): void
-    {
+    public static function unlock_attempt(base $event): void {
         global $DB;
 
         $attemptid = $event->objectid;

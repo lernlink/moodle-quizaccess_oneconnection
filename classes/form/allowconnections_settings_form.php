@@ -50,8 +50,7 @@ class allowconnections_settings_form extends \moodleform
      *
      * @return void
      */
-    public function definition(): void
-    {
+    public function definition(): void {
         $mform = $this->_form;
 
         // Get custom data passed to the form constructor.

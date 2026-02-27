@@ -44,8 +44,7 @@ class attempt_unlocked extends base
      *
      * @return void
      */
-    protected function init(): void
-    {
+    protected function init(): void {
         $this->data['objecttable'] = 'quiz_attempts';
         $this->data['crud'] = 'u'; // 'u' for update, as the attempt state is being modified.
         $this->data['edulevel'] = self::LEVEL_TEACHING;
@@ -56,8 +55,7 @@ class attempt_unlocked extends base
      *
      * @return string
      */
-    public static function get_name(): string
-    {
+    public static function get_name(): string {
         return get_string('eventattemptunlocked', 'quizaccess_oneconnection');
     }
 
@@ -66,8 +64,7 @@ class attempt_unlocked extends base
      *
      * @return string
      */
-    public function get_description(): string
-    {
+    public function get_description(): string {
         return "The user with id '{$this->userid}' allowed the student with id '{$this->relateduserid}' to change the "
             . "device for the attempt with id '{$this->objectid}' for the quiz with course module id '{$this->contextinstanceid}'.";
     }
@@ -77,8 +74,7 @@ class attempt_unlocked extends base
      *
      * @return moodle_url
      */
-    public function get_url(): moodle_url
-    {
+    public function get_url(): moodle_url {
         return new moodle_url('/mod/quiz/review.php', ['attempt' => $this->objectid]);
     }
 
@@ -88,8 +84,7 @@ class attempt_unlocked extends base
      * @throws coding_exception
      * @return void
      */
-    protected function validate_data(): void
-    {
+    protected function validate_data(): void {
         parent::validate_data();
 
         if (!isset($this->relateduserid)) {
@@ -106,8 +101,7 @@ class attempt_unlocked extends base
      *
      * @return array|string
      */
-    public static function get_objectid_mapping()
-    {
+    public static function get_objectid_mapping() {
         return ['db' => 'quiz_attempts', 'restore' => 'quiz_attempt'];
     }
 
@@ -116,8 +110,7 @@ class attempt_unlocked extends base
      *
      * @return array
      */
-    public static function get_other_mapping(): array
-    {
+    public static function get_other_mapping(): array {
         $othermapped = [];
         $othermapped['quizid'] = ['db' => 'quiz', 'restore' => 'quiz'];
 

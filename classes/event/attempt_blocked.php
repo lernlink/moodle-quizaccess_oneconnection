@@ -45,8 +45,7 @@ class attempt_blocked extends base
      *
      * @return void
      */
-    protected function init(): void
-    {
+    protected function init(): void {
         $this->data['objecttable'] = 'quiz_attempts';
         $this->data['crud'] = 'r'; // 'r' for read, as it's an access attempt.
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
@@ -57,8 +56,7 @@ class attempt_blocked extends base
      *
      * @return string
      */
-    public static function get_name(): string
-    {
+    public static function get_name(): string {
         return get_string('eventattemptblocked', 'quizaccess_oneconnection');
     }
 
@@ -67,8 +65,7 @@ class attempt_blocked extends base
      *
      * @return string
      */
-    public function get_description(): string
-    {
+    public function get_description(): string {
         return "Attempt of user with id '{$this->userid}' to continue attempt with id '{$this->objectid}' for the quiz "
             . "with course module id '{$this->contextinstanceid}' using another device was blocked.";
     }
@@ -78,8 +75,7 @@ class attempt_blocked extends base
      *
      * @return moodle_url
      */
-    public function get_url(): moodle_url
-    {
+    public function get_url(): moodle_url {
         return new moodle_url('/mod/quiz/review.php', ['attempt' => $this->objectid]);
     }
 
@@ -89,8 +85,7 @@ class attempt_blocked extends base
      * @throws coding_exception
      * @return void
      */
-    protected function validate_data(): void
-    {
+    protected function validate_data(): void {
         parent::validate_data();
 
         if (!isset($this->relateduserid)) {
@@ -107,8 +102,7 @@ class attempt_blocked extends base
      *
      * @return array|string
      */
-    public static function get_objectid_mapping()
-    {
+    public static function get_objectid_mapping() {
         return ['db' => 'quiz_attempts', 'restore' => 'quiz_attempt'];
     }
 
@@ -117,8 +111,7 @@ class attempt_blocked extends base
      *
      * @return array
      */
-    public static function get_other_mapping(): array
-    {
+    public static function get_other_mapping(): array {
         $othermapped = [];
         $othermapped['quizid'] = ['db' => 'quiz', 'restore' => 'quiz'];
 

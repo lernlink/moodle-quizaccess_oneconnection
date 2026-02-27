@@ -43,8 +43,7 @@ use core_privacy\local\request\core_userlist_provider;
  * Implements Moodle's privacy API to handle data requests and deletions.
  * @package quizaccess_oneconnection\privacy
  */
-class provider implements metadata_provider, plugin_provider, core_userlist_provider
-{
+class provider implements core_userlist_provider, metadata_provider, plugin_provider {
 
     /**
      * Get the metadata that describes the data stored by this plugin.
@@ -52,8 +51,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param collection $collection The collection to add metadata to.
      * @return collection The updated collection.
      */
-    public static function get_metadata(collection $collection): collection
-    {
+    public static function get_metadata(collection $collection): collection {
         $collection->add_database_table(
             'quizaccess_oneconnection_log',
             [
@@ -73,8 +71,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param int $userid The user ID to search for.
      * @return contextlist List of contexts where this user has data.
      */
-    public static function get_contexts_for_userid(int $userid): contextlist
-    {
+    public static function get_contexts_for_userid(int $userid): contextlist {
         global $DB;
 
         $contextlist = new contextlist();
@@ -109,8 +106,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param approved_contextlist $contextlist Approved contexts for the user.
      * @return void
      */
-    public static function export_user_data(approved_contextlist $contextlist)
-    {
+    public static function export_user_data(approved_contextlist $contextlist) {
         // Intentionally does nothing – this is teacher/invigilator audit data, not student data.
     }
 
@@ -122,8 +118,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param \context $context The context being deleted.
      * @return void
      */
-    public static function delete_data_for_all_users_in_context(\context $context)
-    {
+    public static function delete_data_for_all_users_in_context(\context $context) {
         global $DB;
 
         if ($context->contextlevel != CONTEXT_MODULE) {
@@ -146,8 +141,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param approved_contextlist $contextlist Approved contexts for the user.
      * @return void
      */
-    public static function delete_data_for_user(approved_contextlist $contextlist)
-    {
+    public static function delete_data_for_user(approved_contextlist $contextlist) {
         global $DB;
 
         $userid = $contextlist->get_user()->id;
@@ -177,8 +171,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param userlist $userlist The userlist to populate.
      * @return void
      */
-    public static function get_users_in_context(userlist $userlist)
-    {
+    public static function get_users_in_context(userlist $userlist) {
         global $DB;
 
         $context = $userlist->get_context();
@@ -207,8 +200,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
      * @param approved_userlist $userlist The approved list of users whose data should be deleted.
      * @return void
      */
-    public static function delete_data_for_users(approved_userlist $userlist)
-    {
+    public static function delete_data_for_users(approved_userlist $userlist) {
         global $DB;
 
         $context = $userlist->get_context();
