@@ -251,7 +251,10 @@ class quizaccess_oneconnection extends access_rule_base
      */
     public function add_preflight_check_form_fields($quizform, $mform, $attemptid)
     {
+        global $PAGE;
+        $PAGE->add_body_class('quizaccess_oneconnection_blocked_page');
         if (!$attemptid || !$this->is_attempt_blocked((int) $attemptid)) {
+            $PAGE->remove_body_class('quizaccess_oneconnection_blocked_page');
             return;
         }
 
@@ -290,7 +293,6 @@ class quizaccess_oneconnection extends access_rule_base
         }
 
         // Add JavaScript as a secondary defense to hide buttons, for any themes that might override the CSS.
-        global $PAGE;
         $PAGE->requires->js_call_amd('quizaccess_oneconnection/preflight', 'init');
     }
 

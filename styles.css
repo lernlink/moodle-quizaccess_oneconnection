@@ -6,7 +6,7 @@
  * @copyright  2016 Vadim Dvorovenko
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#page-mod-quiz-view .errorcode,
-#page-mod-quiz-attempt .errorcode {
+.quizaccess_oneconnection_blocked_page .errorcode,
+.quizaccess_oneconnection_blocked_page .errorcode {
     display: none;
 }
