@@ -43,8 +43,7 @@ class backup_quizaccess_oneconnection_subplugin extends backup_mod_quiz_access_s
      *
      * @return backup_nested_element
      */
-    protected function define_quiz_subplugin_structure()
-    {
+    protected function define_quiz_subplugin_structure() {
         $subplugin = $this->get_subplugin_element();
         $wrapper = new backup_nested_element($this->get_recommended_name());
         $subplugin->add_child($wrapper);

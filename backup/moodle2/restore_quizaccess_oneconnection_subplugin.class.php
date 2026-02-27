@@ -43,8 +43,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
      *
      * @return array of restore_path_element
      */
-    protected function define_quiz_subplugin_structure()
-    {
+    protected function define_quiz_subplugin_structure() {
         $paths = [];
         $paths[] = new restore_path_element('quizaccess_oneconnection', $this->get_pathfor('/quizaccess_oneconnection'));
         $paths[] = new restore_path_element('log', $this->get_pathfor('/logs/log'));
@@ -57,8 +56,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
      * @param array $data Data read from the XML file.
      * @return void
      */
-    public function process_quizaccess_oneconnection($data): void
-    {
+    public function process_quizaccess_oneconnection($data): void {
         global $DB;
 
         $data = (object) $data;
@@ -72,8 +70,7 @@ class restore_quizaccess_oneconnection_subplugin extends restore_mod_quiz_access
      * @param array $data Data read from the XML file.
      * @return void
      */
-    public function process_log($data): void
-    {
+    public function process_log($data): void {
         global $DB;
 
         $data = (object) $data;

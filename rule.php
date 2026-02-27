@@ -1,6 +1,4 @@
 <?php
-
-use function PHPUnit\Framework\throwException;
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -50,8 +48,7 @@ use mod_quiz\quiz_attempt;
  *
  * @package quizaccess_oneconnection
  */
-class quizaccess_oneconnection extends access_rule_base
-{
+class quizaccess_oneconnection extends access_rule_base {
 
     /**
      * Create an instance of this rule if applicable to the given quiz.
@@ -61,8 +58,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param bool $canignoretimelimits Whether the current user is exempt from time limits (ignored).
      * @return self|null Returns a rule instance if enabled, otherwise null.
      */
-    public static function make(quiz_settings $quizobj, $timenow, $canignoretimelimits)
-    {
+    public static function make(quiz_settings $quizobj, $timenow, $canignoretimelimits) {
         if (!empty($quizobj->get_quiz()->oneconnectionenabled)) {
             return new self($quizobj, $timenow);
         }
@@ -79,8 +75,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @return string Session hash in the format "secret|hmac".
      * @throws coding_exception If random_bytes() fails.
      */
-    private function get_session_hash(): string
-    {
+    private function get_session_hash(): string {
         $sessionstring = $this->get_session_string();
         try {
             $secret = random_bytes(16);
@@ -100,8 +95,7 @@ class quizaccess_oneconnection extends access_rule_base
      *
      * @return string Fingerprint string for the current request.
      */
-    private function get_session_string(): string
-    {
+    private function get_session_string(): string {
         $sessionstring = [];
 
         // 1. Moodle session.
@@ -132,8 +126,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param string $secretandhash The value stored in DB.
      * @return bool True if the current request matches the stored fingerprint, false otherwise.
      */
-    private function validate_session_hash($secretandhash): bool
-    {
+    private function validate_session_hash($secretandhash): bool {
         if (empty($secretandhash) || strpos($secretandhash, '|') === false) {
             return false;
         }
@@ -160,8 +153,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @return bool True if the attempt is blocked, false if it is either unbound or valid for this session.
      * @throws moodle_exception If the session is invalid, an exception is thrown to be caught by is_preflight_check_required.
      */
-    private function is_attempt_blocked(int $attemptid): bool
-    {
+    private function is_attempt_blocked(int $attemptid): bool {
         global $DB, $PAGE;
 
         if (!$attemptid) {
@@ -194,8 +186,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param int|null $attemptid The current attempt ID, if any.
      * @return bool True if the preflight form must be shown.
      */
-    public function is_preflight_check_required($attemptid): bool
-    {
+    public function is_preflight_check_required($attemptid): bool {
         global $DB;
 
         if (is_null($attemptid)) {
@@ -249,8 +240,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param int|null $attemptid Current attempt ID.
      * @return void
      */
-    public function add_preflight_check_form_fields($quizform, $mform, $attemptid)
-    {
+    public function add_preflight_check_form_fields($quizform, $mform, $attemptid) {
         global $PAGE;
         $PAGE->add_body_class('quizaccess_oneconnection_blocked_page');
         if (!$attemptid || !$this->is_attempt_blocked((int) $attemptid)) {
@@ -307,8 +297,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param int|null $attemptid Current attempt ID.
      * @return array Updated list of errors.
      */
-    public function validate_preflight_check($data, $files, $errors, $attemptid): array
-    {
+    public function validate_preflight_check($data, $files, $errors, $attemptid): array {
         if ($attemptid && $this->is_attempt_blocked((int) $attemptid)) {
             $errors['oneconnectionblocked'] = get_string('anothersession', 'quizaccess_oneconnection');
         }
@@ -322,8 +311,7 @@ class quizaccess_oneconnection extends access_rule_base
      *
      * @return string|null Always null.
      */
-    public function prevent_access()
-    {
+    public function prevent_access() {
         return null;
     }
 
@@ -332,8 +320,7 @@ class quizaccess_oneconnection extends access_rule_base
      *
      * @return array|string One or more messages to display.
      */
-    public function description()
-    {
+    public function description() {
         $messages = [get_string('studentinfo', 'quizaccess_oneconnection')];
 
         // If the rule is active, show a button for teachers to manage connection locks.
@@ -364,8 +351,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param moodle_page $page Current page.
      * @return void
      */
-    public function setup_attempt_page($page)
-    {
+    public function setup_attempt_page($page) {
         return;
     }
 
@@ -376,8 +362,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param MoodleQuickForm $mform The MoodleQuickForm instance.
      * @return void
      */
-    public static function add_settings_form_fields(mod_quiz_mod_form $quizform, MoodleQuickForm $mform)
-    {
+    public static function add_settings_form_fields(mod_quiz_mod_form $quizform, MoodleQuickForm $mform) {
         $context = $quizform->get_context();
         $canedit = has_capability('quizaccess/oneconnection:editenabled', $context);
 
@@ -408,15 +393,14 @@ class quizaccess_oneconnection extends access_rule_base
      * @param object $quiz Quiz data object.
      * @return void
      */
-    public static function save_settings($quiz)
-    {
+    public static function save_settings($quiz) {
         global $DB;
 
         // If 'oneconnectionenabled' is not set, it means the checkbox was unchecked.
         // However, if the field was frozen (user has no capability), Moodle forms automatically
-        // passes the frozen value in $quiz->oneconnectionenabled.
+        // Passes the frozen value in $quiz->oneconnectionenabled.
         // Therefore, we can rely on $quiz->oneconnectionenabled being correct even if the user
-        // did not have permission to edit it.
+        // Did not have permission to edit it.
         $enabled = !empty($quiz->oneconnectionenabled) ? 1 : 0;
 
         $existing = $DB->get_record('quizaccess_oneconnection', ['quizid' => $quiz->id]);
@@ -428,8 +412,8 @@ class quizaccess_oneconnection extends access_rule_base
             }
         } else {
             // No record exists. We create one to store the quiz-specific setting.
-            // This path is essential when a new quiz is created by a user who cannot edit this setting
-            // (the field was frozen with the site default).
+            // This path is essential when a new quiz is created by a user who cannot edit this setting.
+            // The field was frozen with the site default.
             $record = new stdClass();
             $record->quizid = $quiz->id;
             $record->enabled = $enabled;
@@ -448,8 +432,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param object $quiz Quiz data object.
      * @return void
      */
-    public static function delete_settings($quiz)
-    {
+    public static function delete_settings($quiz) {
         global $DB;
 
         $DB->delete_records('quizaccess_oneconnection', ['quizid' => $quiz->id]);
@@ -463,8 +446,7 @@ class quizaccess_oneconnection extends access_rule_base
      * @param int $quizid Quiz ID.
      * @return array Array with select, join, and params for the DB query.
      */
-    public static function get_settings_sql($quizid): array
-    {
+    public static function get_settings_sql($quizid): array {
         return [
             'quizaccess_oneconnection.enabled oneconnectionenabled',
             'LEFT JOIN {quizaccess_oneconnection} quizaccess_oneconnection ON quizaccess_oneconnection.quizid = quiz.id',

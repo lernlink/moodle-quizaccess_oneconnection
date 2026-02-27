@@ -46,8 +46,7 @@ use core_user;
  * @param stdClass $quiz     The quiz record (used for the filename).
  * @return void              This function exits after sending the file.
  */
-function quizaccess_oneconnection_export_table(string $download, string $sql, array $params, stdClass $quiz): void
-{
+function quizaccess_oneconnection_export_table(string $download, string $sql, array $params, stdClass $quiz): void {
     global $DB;
 
     // The file extension will be added automatically by the export library.
@@ -192,14 +191,14 @@ function quizaccess_oneconnection_export_table(string $download, string $sql, ar
                 $statetext = $r->state ?? '';
         }
 
-        // "Change in connection" text.
+        // The "Change in connection" text.
         if ($canunlocknow) {
             $changeinconnection = get_string('allowchange', 'quizaccess_oneconnection');
         } else {
             $changeinconnection = get_string('notpossible', 'quizaccess_oneconnection');
         }
 
-        // "Change allowed" text.
+        // The "Change allowed" text.
         $changeallowed = '';
         if (!empty($r->unlockedby) && !empty($r->timeunlocked)) {
             $unlockuser = core_user::get_user(
@@ -310,6 +309,7 @@ if ($action === 'unlock' && confirm_sesskey()) {
             $DB->insert_record('quizaccess_oneconnection_log', $log);
         } catch (dml_exception $e) {
             // Fails silently if the log table doesn't exist (e.g., on older plugin versions).
+            ;
         }
 
         // 3. Fire an event.
@@ -422,6 +422,7 @@ if (optional_param('unlockselected', 0, PARAM_BOOL) && confirm_sesskey()) {
                 $DB->insert_record('quizaccess_oneconnection_log', $log);
             } catch (dml_exception $e) {
                 // Fails silently if log table is missing.
+                ;
             }
 
             // 3. Fire event.
@@ -710,10 +711,12 @@ $letters = range('A', 'Z');
 // First name.
 echo html_writer::start_div('initialbar firstinitial d-flex flex-wrap justify-content-center justify-content-md-start mb-2');
 echo html_writer::tag('span', get_string('firstname'), ['class' => 'initialbarlabel me-2']);
-echo html_writer::start_tag('nav', ['class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start']);
+echo html_writer::start_tag('nav', [
+    'class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start',
+]);
 echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
 
-// "All" button for first name.
+// All button for first name.
 $allurl = clone $baseurl;
 $allurl->param('tifirst', '');
 $isactive = ($firstnameinitial === '');
@@ -739,10 +742,12 @@ echo html_writer::end_div();
 // Last name initials bar.
 echo html_writer::start_div('initialbar lastinitial d-flex flex-wrap justify-content-center justify-content-md-start');
 echo html_writer::tag('span', get_string('lastname'), ['class' => 'initialbarlabel me-2']);
-echo html_writer::start_tag('nav', ['class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start']);
+echo html_writer::start_tag('nav', [
+    'class' => 'initialbargroups d-flex flex-wrap justify-content-center justify-content-md-start',
+]);
 echo html_writer::start_tag('ul', ['class' => 'pagination pagination-sm']);
 
-// "All" button for last name.
+// All button for last name.
 $allurl = clone $baseurl;
 $allurl->param('tilast', '');
 $isactive = ($lastnameinitial === '');

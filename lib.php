@@ -20,12 +20,9 @@
  * Contains navigation hooks and other integration points.
  *
  * @package     quizaccess_oneconnection
- * @category    lib
  * @copyright   2025 lern.link GmbH <team@lernlink.de>, Adrian Sarmas, Vadym Nersesov
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 use core\output\pix_icon;
 use core\plugin_manager;
@@ -41,8 +38,7 @@ use core\plugin_manager;
  * @param stdClass $course The course record.
  * @return void
  */
-function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void
-{
+function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, stdClass $quiz, stdClass $cm, stdClass $course): void {
     $context = context_module::instance($cm->id);
     if (!has_capability('quizaccess/oneconnection:allowchange', $context)) {
         return;
@@ -77,8 +73,7 @@ function quizaccess_oneconnection_extend_navigation(navigation_node $morenode, s
  * @param array $params Extra hidden parameters to include in the form submission.
  * @return string The rendered HTML for the form.
  */
-function quizaccess_oneconnection_download_dataformat_selector($label, $base, $name = 'dataformat', $params = [])
-{
+function quizaccess_oneconnection_download_dataformat_selector($label, $base, $name = 'dataformat', $params = []) {
     global $OUTPUT;
 
     $formats = plugin_manager::instance()->get_plugins_of_type('dataformat');
