@@ -290,20 +290,8 @@ class quizaccess_oneconnection extends access_rule_base
         }
 
         // Add JavaScript as a secondary defense to hide buttons, for any themes that might override the CSS.
-        $js = <<<JS
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var g = document.getElementById('fgroup_id_buttonar');
-                if (g) { g.style.display = 'none'; }
-                var s = document.getElementById('id_submitbutton');
-                if (s) { s.style.display = 'none'; }
-                var c = document.getElementById('id_cancel');
-                if (c) { c.style.display = 'none'; }
-            });
-            </script>
-        JS;
-
-        $mform->addElement('static', 'oneconnectionjs', '', $js);
+        global $PAGE;
+        $PAGE->requires->js_call_amd('quizaccess_oneconnection/preflight', 'init');
     }
 
     /**
