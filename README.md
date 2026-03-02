@@ -146,6 +146,12 @@ Version 5.0+ features were developed based on specifications by **Marco Lehre**,
 
 ## Changelog
 
+### Version 5.1.1 (build 2026030200) - March 2026
+
+**Bug Fixes:**
+- Namespaced all CSS selectors to avoid global impact on quiz pages
+- Migrated JavaScript to ES6 modules
+
 ### Version 5.1.0 (build 2025121600) - December 2025
 
 **Major Features:**
